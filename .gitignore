@@ -1,0 +1,17 @@
+.vscode/
+.ipynb_checkpoints
+.envrc
+__pycache__/
+*.egg-info
+site/
+build/
+dist/
+**/.DS_Store
+.cache/
+.env
+env/
+.pytest_cache/
+/envs
+.nvim
+gpg
+venv/

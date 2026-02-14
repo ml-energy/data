@@ -1,0 +1,45 @@
+site_name: ML.ENERGY Data & Toolkit
+site_url: https://ml.energy/data
+site_description: Datasets published by ML.ENERGY and toolkits for working with them.
+
+repo_name: ml-energy/data
+repo_url: https://github.com/ml-energy/data
+
+copyright: Copyright &copy; 2026 ML.ENERGY
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Light mode
+
+nav:
+  - Home: index.md
+  - Guide: guide.md
+  - API Reference:
+      - Records: api/records.md
+      - Modeling: api/modeling.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_heading: true
+            members_order: source
+            docstring_style: google
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences

@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mlenergy-data"
+version = "0.1.0"
+description = "ML.ENERGY Benchmark data toolkit"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+dependencies = [
+    "numpy",
+    "pandas",
+    "PyYAML",
+    "huggingface_hub",
+    "pyarrow",
+]
+
+[dependency-groups]
+test = ["pytest"]
+lint = ["ruff", "ty"]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
+dev = [{include-group = "test"}, {include-group = "lint"}, {include-group = "docs"}]
+
+[tool.setuptools.packages.find]
+include = ["mlenergy_data*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 99
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "I",
+    "UP",
+    "B",
+    "SIM",
+    "RUF",
+]
+ignore = [
+    "SIM108",
+    "RUF046",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mlenergy_data"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

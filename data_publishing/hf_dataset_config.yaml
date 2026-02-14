@@ -1,0 +1,15 @@
+pretty_name: "The ML.ENERGY Benchmark v3 Dataset"
+license: apache-2.0
+extra_gated_fields:
+  Organization: text
+  Country: country
+configs:
+- config_name: llm
+  data_files:
+  - split: all
+    path: "runs/llm.parquet"
+  default: true
+- config_name: diffusion
+  data_files:
+  - split: all
+    path: "runs/diffusion.parquet"
