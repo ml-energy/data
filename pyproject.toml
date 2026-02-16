@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm>=8"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlenergy-data"
-version = "0.1.0"
+dynamic = ["version"]
 description = "ML.ENERGY Benchmark data toolkit"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -21,6 +21,9 @@ test = ["pytest"]
 lint = ["ruff", "ty"]
 docs = ["mkdocs-material", "mkdocstrings[python]"]
 dev = [{include-group = "test"}, {include-group = "lint"}, {include-group = "docs"}]
+
+[tool.setuptools.dynamic]
+version = {attr = "mlenergy_data.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["mlenergy_data*"]

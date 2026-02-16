@@ -13,3 +13,5 @@ __all__ = [
     "LLMRun",
     "LLMRuns",
 ]
+
+__version__ = "0.0.1"
