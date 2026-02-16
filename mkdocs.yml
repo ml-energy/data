@@ -9,6 +9,9 @@ copyright: Copyright &copy; 2026 ML.ENERGY
 
 theme:
   name: material
+  favicon: assets/favicon/favicon.ico
+  icon:
+    logo: octicons/database-24
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
