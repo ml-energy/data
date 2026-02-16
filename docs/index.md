@@ -13,13 +13,10 @@ Actual data are currently stored in Hugging Face Hub: [`ml-energy/benchmark-v3`]
 - **Fit models** — logistic power/latency curves, ITL latency distributions.
 - **Build data packages** for publishing to Hugging Face Hub.
 
-!!! note "Hugging Face Hub"
-    Benchmark datasets will be published to the Hugging Face Hub. This is a work in progress.
-
 ## Installation
 
 ```bash
-pip install -e .
+pip install mlenergy-data
 ```
 
 ## Quick example
@@ -27,7 +24,7 @@ pip install -e .
 ```python
 from mlenergy_data.records import LLMRuns
 
-runs = LLMRuns.from_directory("/path/to/compiled/data")
+runs = LLMRuns.from_hf()
 
 # Find the most energy-efficient model on GPQA
 best = min(runs.task("gpqa"), key=lambda r: r.energy_per_token_joules)
@@ -37,7 +34,7 @@ print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok on {best.gpu_m
 ## Who uses it
 
 - [**The ML.ENERGY Leaderboard v3.0**](https://ml.energy/leaderboard): Benchmark results are loaded and compiled into the leaderboard web app data format.
-- **OpenG2G**: Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
+- [**OpenG2G**](https://github.com/ml-energy/openg2g): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
 - [**The ML.ENERGY blog**](https://ml.energy/blog): Analysis scripts for blog posts.
 
 ## Next steps

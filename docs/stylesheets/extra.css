@@ -1,0 +1,5 @@
+/* Make site name in header less bold */
+.md-header__topic:first-child {
+  font-weight: 400;
+}
+

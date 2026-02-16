@@ -11,6 +11,9 @@ on:
 permissions:
   contents: write
 
+env:
+  SITE_ANALYTICS: google
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -21,3 +24,5 @@ jobs:
           enable-cache: true
       - run: uv sync --group docs
       - run: uv run mkdocs gh-deploy --force
+        env:
+          BUILD_SOCIAL_CARD: true

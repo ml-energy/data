@@ -1,4 +1,4 @@
-# The ML.ENERGY Benchmark Dataset v3
+# The ML.ENERGY Benchmark V3 Dataset
 
 This dataset contains benchmark results from [The ML.ENERGY Benchmark](https://github.com/ml-energy/benchmark).
 You can use [The ML.ENERGY Leaderboard](https://ml.energy) to explore the benchmarking results.

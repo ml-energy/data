@@ -613,7 +613,6 @@ wheels = [
 
 [[package]]
 name = "mlenergy-data"
-version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },

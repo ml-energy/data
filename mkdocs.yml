@@ -1,4 +1,4 @@
-site_name: ML.ENERGY Data & Toolkit
+site_name: The ML.ENERGY Data & Toolkit
 site_url: https://ml.energy/data
 site_description: Datasets published by ML.ENERGY and toolkits for working with them.
 
@@ -12,11 +12,13 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: black
       toggle:
         icon: material/brightness-7
         name: Dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: black
       toggle:
         icon: material/brightness-4
         name: Light mode
@@ -30,6 +32,12 @@ nav:
 
 plugins:
   - search
+  - social:
+      enabled: !ENV [BUILD_SOCIAL_CARD, false]
+      cards_dir: assets/img/social
+      cards_layout_options:
+        background_color: "#f7e96d"
+        color: "#231f20"
   - mkdocstrings:
       handlers:
         python:
@@ -43,3 +51,11 @@ markdown_extensions:
   - admonition
   - pymdownx.highlight
   - pymdownx.superfences
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  analytics:
+    provider: !ENV SITE_ANALYTICS
+    property: G-C013T57GV2
