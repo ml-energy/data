@@ -34,11 +34,11 @@ Data is loaded from HF Hub by the `from_hf()` calls in the blocks themselves (ca
 Annotate the opening fence to control test behavior. Annotations are invisible in rendered docs.
 
 ````markdown
-```python test="skip"
+```python {test="skip"}
 # Always skipped (e.g. placeholder paths, heavy downloads).
 ```
 
-```python test="skip-bulk"
+```python {test="skip-bulk"}
 # Skipped by default.  Pass --run-bulk to include.
 ```
 ````

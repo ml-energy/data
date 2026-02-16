@@ -6,7 +6,7 @@ To aid in working with these datasets, we also provide a Python toolkit: `mlener
 We currently have [The ML.ENERGY Benchmark v3.0](https://github.com/ml-energy/benchmark) dataset, which includes LLM and diffusion inference runs on NVIDIA H100 and B200 GPUs.
 Actual data are stored in Hugging Face Hub: [`ml-energy/benchmark-v3`](https://huggingface.co/datasets/ml-energy/benchmark-v3).
 
-## What the toolkit does
+## What the Toolkit Does
 
 - **Load and filter benchmark runs** with typed, immutable collection classes (`LLMRuns`, `DiffusionRuns`).
 - **Extract bulk data** — power timelines, ITL samples, output lengths — as DataFrames.
@@ -19,7 +19,7 @@ Actual data are stored in Hugging Face Hub: [`ml-energy/benchmark-v3`](https://h
 pip install mlenergy-data
 ```
 
-## Quick example
+## Quick Example
 
 ```python
 from mlenergy_data.records import LLMRuns
@@ -49,13 +49,13 @@ for arch, group in runs.task("gpqa").gpu("B200").group_by("architecture").items(
     print(f"{arch}: {best.nickname} @ {best.energy_per_token_joules:.3f} J/tok")
 ```
 
-## Who uses it
+## Who Uses It
 
 - [**The ML.ENERGY Leaderboard v3.0**](https://ml.energy/leaderboard): Benchmark results are loaded and compiled into the leaderboard web app data format.
 - [**OpenG2G**](TODO): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
 - [**The ML.ENERGY blog**](https://ml.energy/blog): Analysis scripts for blog posts.
 
-## Next steps
+## Next Steps
 
 - [Guide](guide.md): Progressive walkthrough from loading data to fitting models.
 - [API Reference](api/records.md): Auto-generated from docstrings.

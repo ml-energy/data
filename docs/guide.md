@@ -1,24 +1,17 @@
 # Guide
 
-## Real-world examples
+## Real-World Examples
 
 For full working examples of the toolkit in production, see:
 
-- ML.ENERGY Leaderboard data build
-   - Builds the leaderboard JSON data from benchmark runs
-   - [The ML.ENERGY Leaderboard](https://ml.energy/leaderboard)
-   - [Data build script](https://github.com/ml-energy/leaderboard/blob/main/scripts/build_data.py)
-- ML.ENERGY Blog analysis scripts
-   - Generates figures for the ML.ENERGY blog post on the V3 benchmark results
-   - [Blog post](https://ml.energy/blog/measurement/energy/diagnosing-inference-energy-consumption-with-the-mlenergy-leaderboard-v30/)
-   - [Analysis script](TODO)
-- OpenG2G simulation data build
-   - Builds power traces, logistic fits, and latency distributions for datacenter--grid coordination simulation
-   - [OpenG2G](TODO)
-   - [Data build script](TODO)
+| Project | Description | Script |
+|---------|-------------|-------|
+| [The ML.ENERGY Leaderboard](https://ml.energy/leaderboard) | Builds the leaderboard JSON data from benchmark runs | [Link](https://github.com/ml-energy/leaderboard/blob/main/scripts/build_data.py) |
+| [The ML.ENERGY Blog](https://ml.energy/blog/measurement/energy/diagnosing-inference-energy-consumption-with-the-mlenergy-leaderboard-v30/) | Analysis for the blog post on the V3 benchmark results | [Link](TODO) |
+| [OpenG2G Simulation](TODO) | Power traces and models for datacenter–grid simulation | [Link](TODO) |
 
 
-## Loading benchmark runs
+## Loading Benchmark Runs
 
 `LLMRuns` and `DiffusionRuns` are typed, immutable collections.
 Each run is a frozen dataclass (`LLMRun` / `DiffusionRun`) with IDE autocomplete and type checking.
@@ -38,7 +31,7 @@ diff = DiffusionRuns.from_hf()
 
 Or load from a local compiled data directory:
 
-```python test="skip"
+```python {test="skip"}
 root = "/path/to/compiled/data"
 runs = LLMRuns.from_directory(root)
 runs = LLMRuns.from_directory(root, stable_only=False)
@@ -88,7 +81,7 @@ unstable_only = runs.unstable()
 big_models = runs.where(lambda r: r.total_params_billions > 70)
 ```
 
-## Data access
+## Data Access
 
 There are two ways to access run data:
 
@@ -145,7 +138,7 @@ for (model, batch), g in runs.group_by("model_id", "max_num_seqs").items():
     print(f"{model} @ batch={batch}: {best.energy_per_token_joules:.3f} J/tok")
 ```
 
-## Analysis patterns
+## Analysis Patterns
 
 Python is the analysis layer — no special helper functions needed:
 
@@ -162,20 +155,20 @@ for gpu, g in llama70b.group_by("gpu_model").items():
 plt.legend()
 ```
 
-## Bulk data
+## Bulk Data
 
 These methods return pandas DataFrames for numerical analysis.
 When loaded from HF Hub (`from_hf()`), they automatically download only the raw files needed for the current collection. The download scope is determined by your filters. HF Hub caches files locally, so repeated calls are instant.
 
 To eagerly download all raw files upfront, use `prefetch()`:
 
-```python test="skip"
+```python {test="skip"}
 # Eagerly download all raw files for a filtered collection
 runs = LLMRuns.from_hf().task("gpqa").prefetch()
 power_tl = runs.timelines(metric="power.device_instant")  # no download delay
 ```
 
-```python test="skip"
+```python {test="skip"}
 # Power timelines (long-form)
 power_tl = runs.timelines(metric="power.device_instant")
 # Columns: results_path, domain, task, model_id, num_gpus, max_num_seqs, batch_size, timestamp, relative_time_s, value, metric
@@ -191,7 +184,7 @@ out_df = runs.output_lengths()
 df = runs.to_dataframe()
 ```
 
-## Diffusion runs
+## Diffusion Runs
 
 `DiffusionRuns` follows the same patterns:
 
@@ -213,9 +206,9 @@ r.is_text_to_video   # True for text-to-video tasks
 # num_gpus(), precision(), where()
 ```
 
-## Model fitting
+## Model Fitting
 
-### Logistic curves
+### Logistic Curves
 
 `LogisticModel` models a four-parameter logistic `y = b0 + L * sigmoid(k * (x - x0))` where `x = log2(batch_size)`:
 
@@ -236,7 +229,7 @@ d = fit.to_dict()  # {"L": ..., "x0": ..., "k": ..., "b0": ...}
 fit2 = LogisticModel.from_dict(d)
 ```
 
-### ITL latency distributions
+### ITL Latency Distributions
 
 `ITLMixtureModel` fits a two-component lognormal mixture for inter-token latency:
 
