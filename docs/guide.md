@@ -6,7 +6,7 @@ For full working examples of the toolkit in production, see:
 
 - [ML.ENERGY Leaderboard data build](https://github.com/ml-energy/leaderboard/blob/main/scripts/build_data.py) -- builds the leaderboard JSON data from benchmark runs
 - [ML.ENERGY Blog analysis scripts](https://github.com/ml-energy/data/blob/main/blog_analysis_scripts.py) -- generates figures for the ML.ENERGY blog
-- [OpenG2G simulation data build](https://github.com/ml-energy/openg2g/blob/main/data/build_mlenergy_data.py) -- builds power traces, logistic fits, and latency fits for grid simulation
+- [OpenG2G simulation data build](TODO) -- builds power traces, logistic fits, and latency fits for grid simulation
 
 ## Loading benchmark runs
 

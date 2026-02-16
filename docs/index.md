@@ -34,7 +34,7 @@ print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok on {best.gpu_m
 ## Who uses it
 
 - [**The ML.ENERGY Leaderboard v3.0**](https://ml.energy/leaderboard): Benchmark results are loaded and compiled into the leaderboard web app data format.
-- [**OpenG2G**](https://github.com/ml-energy/openg2g): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
+- [**OpenG2G**](TODO): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
 - [**The ML.ENERGY blog**](https://ml.energy/blog): Analysis scripts for blog posts.
 
 ## Next steps
