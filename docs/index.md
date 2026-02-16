@@ -1,10 +1,12 @@
-# mlenergy-data
+# The ML.ENERGY Data & Toolkit
 
-Python toolkit for [ML.ENERGY](https://ml.energy) Benchmark datasets.
+[ML.ENERGY](https://ml.energy) publishes open-source datasets.
+To aid in working with these datasets, we also provide a Python toolkit: `mlenergy-data`.
 
-Currently supports **Benchmark v3.0** (LLM and diffusion inference on NVIDIA H100 and B200 GPUs). The library is designed to accommodate future benchmark versions and datasets.
+We currently have [The ML.ENERGY Benchmark v3.0](https://github.com/ml-energy/benchmark) dataset, which includes LLM and diffusion inference runs on NVIDIA H100 and B200 GPUs.
+Actual data are currently stored in Hugging Face Hub: [`ml-energy/benchmark-v3`](https://huggingface.co/datasets/ml-energy/benchmark-v3).
 
-## What it does
+## What the toolkit does
 
 - **Load and filter benchmark runs** with typed, immutable collection classes (`LLMRuns`, `DiffusionRuns`).
 - **Extract bulk data** — power timelines, ITL samples, output lengths — as DataFrames.
@@ -34,11 +36,11 @@ print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok on {best.gpu_m
 
 ## Who uses it
 
-- [**ML.ENERGY Leaderboard v3.0**](https://ml.energy/leaderboard) — data pipeline for the public leaderboard.
-- **OpenG2G** — datacenter-grid simulation framework; loads benchmark data and fits models.
-- **ML.ENERGY blog** — analysis scripts for blog posts.
+- [**The ML.ENERGY Leaderboard v3.0**](https://ml.energy/leaderboard): Benchmark results are loaded and compiled into the leaderboard web app data format.
+- **OpenG2G**: Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
+- [**The ML.ENERGY blog**](https://ml.energy/blog): Analysis scripts for blog posts.
 
 ## Next steps
 
-- [Guide](guide.md) — progressive walkthrough from loading data to fitting models.
-- [API Reference](api/records.md) — auto-generated from docstrings.
+- [Guide](guide.md): Progressive walkthrough from loading data to fitting models.
+- [API Reference](api/records.md): Auto-generated from docstrings.
