@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-test = ["pytest"]
+test = ["pytest", "pytest-examples", "matplotlib"]
 lint = ["ruff", "ty"]
 docs = ["mkdocs-material[imaging]", "mkdocstrings[python]"]
 dev = [{include-group = "test"}, {include-group = "lint"}, {include-group = "docs"}]

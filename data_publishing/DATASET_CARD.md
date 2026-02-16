@@ -47,7 +47,7 @@ for arch, group in runs.task("gpqa").gpu("B200").group_by("architecture").items(
 
 Bulk data methods auto-download raw files as needed:
 
-```python
+```python test="skip"
 # Power timelines, output lengths, etc.
 power_tl = runs.timelines(metric="power.device_instant")
 ```

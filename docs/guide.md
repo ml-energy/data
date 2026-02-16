@@ -26,19 +26,23 @@ Each run is a frozen dataclass (`LLMRun` / `DiffusionRun`) with IDE autocomplete
 ```python
 from mlenergy_data.records import LLMRuns, DiffusionRuns
 
-# Load all stable LLM runs from a compiled data directory
-root = "/path/to/compiled/data"
-runs = LLMRuns.from_directory(root)
-
-# Include unstable runs
-runs = LLMRuns.from_directory(root, stable_only=False)
-
-# Diffusion runs
-diff = DiffusionRuns.from_directory(root)
-
 # Load from Hugging Face Hub
 runs = LLMRuns.from_hf()
+
+# Include unstable runs
+runs = LLMRuns.from_hf(stable_only=False)
+
+# Diffusion runs
 diff = DiffusionRuns.from_hf()
+```
+
+Or load from a local compiled data directory:
+
+```python test="skip"
+root = "/path/to/compiled/data"
+runs = LLMRuns.from_directory(root)
+runs = LLMRuns.from_directory(root, stable_only=False)
+diff = DiffusionRuns.from_directory(root)
 ```
 
 !!! Note
@@ -165,13 +169,13 @@ When loaded from HF Hub (`from_hf()`), they automatically download only the raw 
 
 To eagerly download all raw files upfront, use `prefetch()`:
 
-```python
+```python test="skip"
 # Eagerly download all raw files for a filtered collection
 runs = LLMRuns.from_hf().task("gpqa").prefetch()
 power_tl = runs.timelines(metric="power.device_instant")  # no download delay
 ```
 
-```python
+```python test="skip"
 # Power timelines (long-form)
 power_tl = runs.timelines(metric="power.device_instant")
 # Columns: results_path, domain, task, model_id, num_gpus, max_num_seqs, batch_size, timestamp, relative_time_s, value, metric
@@ -194,7 +198,7 @@ df = runs.to_dataframe()
 ```python
 from mlenergy_data.records import DiffusionRuns
 
-diff = DiffusionRuns.from_directory(root)
+diff = DiffusionRuns.from_hf()
 t2i = diff.task("text-to-image")
 best = min(t2i, key=lambda r: r.energy_per_generation_joules)
 print(f"{best.nickname}: {best.energy_per_generation_joules:.3f} J/image")
