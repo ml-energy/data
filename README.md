@@ -1,6 +1,6 @@
-# mlenergy-data
+# The ML.ENERGY Data Toolkit
 
-Python toolkit for [ML.ENERGY](https://ml.energy) Benchmark datasets: loading raw results, filtering and analyzing runs, fitting models, and building data packages.
+A Python toolkit for [ML.ENERGY](https://ml.energy) datasets: loading raw results, filtering and analyzing runs, fitting models, and building data packages.
 
 Actual data are stored in Hugging Face Hub: [ml-energy/benchmark-v3](https://huggingface.co/datasets/ml-energy/benchmark-v3). This repository contains code for working with the data, not the data itself.
 
