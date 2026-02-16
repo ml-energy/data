@@ -27,8 +27,8 @@ theme:
         name: Light mode
 
 nav:
-  - Home: index.md
-  - Guide: guide.md
+  - The ML.ENERGY Data & Toolkit: index.md
+  - Toolkit Guide: guide.md
   - API Reference:
       - Records: api/records.md
       - Modeling: api/modeling.md
@@ -38,9 +38,9 @@ plugins:
   - social:
       enabled: !ENV [BUILD_SOCIAL_CARD, false]
       cards_dir: assets/img/social
-      cards_layout_options:
-        background_color: "#f7e96d"
-        color: "#231f20"
+      # cards_layout_options:
+      #   background_color: "#f7e96d"
+      #   color: "#231f20"
   - mkdocstrings:
       handlers:
         python:
