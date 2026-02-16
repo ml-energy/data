@@ -9,6 +9,7 @@ copyright: Copyright &copy; 2026 ML.ENERGY
 
 theme:
   name: material
+  custom_dir: docs/overrides
   favicon: assets/favicon/favicon.ico
   icon:
     logo: octicons/database-24
@@ -25,6 +26,8 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Light mode
+  features:
+    - announce.dismiss
 
 nav:
   - The ML.ENERGY Data & Toolkit: index.md
