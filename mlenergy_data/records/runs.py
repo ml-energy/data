@@ -201,10 +201,11 @@ def _load_parallelization(
         raise FileNotFoundError(f"Missing required monolithic.config.yaml: {cfg}")
     raw = _load_yaml_cached(str(cfg))
 
-    tp = int(raw.get("tensor-parallel-size", 1))
     ep = 1
     if bool(raw.get("enable-expert-parallel", False)):
         ep = int(raw.get("expert-parallel-size", num_gpus))
+    tp_default = 1 if ep > 1 else num_gpus
+    tp = int(raw.get("tensor-parallel-size", tp_default))
     dp_raw = raw.get("data-parallel-size", 1)
     dp = int(dp_raw) if int(dp_raw) != 0 else int(num_gpus)
     return (tp, ep, dp)
