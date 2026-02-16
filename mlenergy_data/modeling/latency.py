@@ -38,7 +38,11 @@ class ITLMixtureModel:
         return ey, vy
 
     def mean_var(self) -> tuple[float, float]:
-        """Compute mean and variance of the two-component mixture."""
+        """Compute analytical mean and variance of the two-component mixture.
+
+        Returns:
+            Tuple of (mean, variance) in seconds.
+        """
         p1 = float(self.pi_steady)
         p2 = float(self.pi_stall)
         ps = max(p1 + p2, 1e-12)
@@ -56,7 +60,14 @@ class ITLMixtureModel:
         return mx, vx
 
     def sample_one(self, rng: np.random.Generator) -> float:
-        """Draw a single sample from the mixture."""
+        """Draw a single ITL sample from the mixture.
+
+        Args:
+            rng: NumPy random generator.
+
+        Returns:
+            Sampled ITL value in seconds.
+        """
         p1 = float(self.pi_steady)
         p2 = float(self.pi_stall)
         ps = max(p1 + p2, 1e-12)

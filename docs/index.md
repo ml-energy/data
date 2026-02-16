@@ -4,7 +4,7 @@
 To aid in working with these datasets, we also provide a Python toolkit: `mlenergy-data`.
 
 We currently have [The ML.ENERGY Benchmark v3.0](https://github.com/ml-energy/benchmark) dataset, which includes LLM and diffusion inference runs on NVIDIA H100 and B200 GPUs.
-Actual data are currently stored in Hugging Face Hub: [`ml-energy/benchmark-v3`](https://huggingface.co/datasets/ml-energy/benchmark-v3).
+Actual data are stored in Hugging Face Hub: [`ml-energy/benchmark-v3`](https://huggingface.co/datasets/ml-energy/benchmark-v3).
 
 ## What the toolkit does
 
@@ -29,6 +29,24 @@ runs = LLMRuns.from_hf()
 # Find the most energy-efficient model on GPQA
 best = min(runs.task("gpqa"), key=lambda r: r.energy_per_token_joules)
 print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok on {best.gpu_model}")
+
+# Column access via .data
+energies = runs.data.energy_per_token_joules  # list[float]
+```
+
+Filter, group, and compare across GPU generations and model architectures:
+
+```python
+# Compare GPU generations: best energy efficiency per model on GPQA
+for gpu, group in runs.task("gpqa").group_by("gpu_model").items():
+    best = min(group, key=lambda r: r.energy_per_token_joules)
+    print(f"{gpu}: {best.nickname} @ {best.energy_per_token_joules:.3f} J/tok, "
+          f"{best.output_throughput_tokens_per_sec:.0f} tok/s")
+
+# MoE, Dense, Hybrid: who's more energy-efficient?
+for arch, group in runs.task("gpqa").gpu("B200").group_by("architecture").items():
+    best = min(group, key=lambda r: r.energy_per_token_joules)
+    print(f"{arch}: {best.nickname} @ {best.energy_per_token_joules:.3f} J/tok")
 ```
 
 ## Who uses it
@@ -41,3 +59,14 @@ print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok on {best.gpu_m
 
 - [Guide](guide.md): Progressive walkthrough from loading data to fitting models.
 - [API Reference](api/records.md): Auto-generated from docstrings.
+
+## Citation
+
+```bibtex
+@inproceedings{mlenergy-neuripsdb25,
+    title={The {ML.ENERGY Benchmark}: Toward Automated Inference Energy Measurement and Optimization},
+    author={Jae-Won Chung and Jeff J. Ma and Ruofan Wu and Jiachen Liu and Oh Jun Kweon and Yuxuan Xia and Zhiyu Wu and Mosharaf Chowdhury},
+    year={2025},
+    booktitle={NeurIPS Datasets and Benchmarks},
+}
+```

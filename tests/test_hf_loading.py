@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import json
 from pathlib import Path
@@ -468,3 +469,171 @@ class TestHFSourcePropagation:
             assert mock.call_count >= 1
             called_filenames = {call.args[1] for call in mock.call_args_list}
             assert runs[0].results_path in called_filenames
+
+
+class TestSelectiveDownload:
+    """Verify that filtering narrows the set of raw files downloaded."""
+
+    @pytest.fixture()
+    def multi_run_setup(self, tmp_path: Path) -> tuple[LLMRuns, dict[int, str]]:
+        """Build 3 runs with different batch sizes, return HF-sourced LLMRuns."""
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=8, seed=1)
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=2)
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=3)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        assert len(runs) == 3
+
+        source = _HFSource(repo_id="test/repo", revision=None, cache_dir=None)
+        hf_runs = LLMRuns(list(runs), _hf_source=source)
+        paths_by_batch = {r.max_num_seqs: r.results_path for r in runs}
+        return hf_runs, paths_by_batch
+
+    def _mock_download(self, paths_by_batch: dict[int, str]):
+        """Return a side_effect that maps filenames to real local paths."""
+        all_paths = set(paths_by_batch.values())
+        prom_paths = {p.replace("results.json", "prometheus.json") for p in all_paths}
+        known = all_paths | prom_paths
+
+        def _side_effect(repo_id: str, filename: str, **kwargs: object) -> str:
+            if filename in known:
+                return filename
+            raise FileNotFoundError(f"mock: unknown file {filename}")
+
+        return _side_effect
+
+    def test_filtered_downloads_only_matching_files(
+        self,
+        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+    ) -> None:
+        """Filtering to batch=8 should only download files for that one run."""
+        hf_runs, paths_by_batch = multi_run_setup
+        filtered = hf_runs.batch(8)
+        assert len(filtered) == 1
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            side_effect=self._mock_download(paths_by_batch),
+        ) as mock:
+            filtered.output_lengths()
+            downloaded = {call.args[1] for call in mock.call_args_list}
+            assert paths_by_batch[8] in downloaded
+            assert paths_by_batch[16] not in downloaded
+            assert paths_by_batch[32] not in downloaded
+
+    def test_unfiltered_downloads_all_files(
+        self,
+        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+    ) -> None:
+        """The full collection should download files for all 3 runs."""
+        hf_runs, paths_by_batch = multi_run_setup
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            side_effect=self._mock_download(paths_by_batch),
+        ) as mock:
+            hf_runs.output_lengths()
+            downloaded = {call.args[1] for call in mock.call_args_list}
+            for batch, path in paths_by_batch.items():
+                assert path in downloaded, f"batch={batch} file not downloaded"
+
+    def test_chained_filter_narrows_downloads(self, tmp_path: Path) -> None:
+        """Chaining .task().batch() should narrow downloads to the intersection."""
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        # Two tasks x two batch sizes = 4 runs
+        _make_benchmark_fixture(root, cfg_root, task="gpqa", max_num_seqs=16, seed=1)
+        _make_benchmark_fixture(root, cfg_root, task="gpqa", max_num_seqs=32, seed=2)
+        _make_benchmark_fixture(root, cfg_root, task="lm-arena-chat", max_num_seqs=16, seed=3)
+        _make_benchmark_fixture(root, cfg_root, task="lm-arena-chat", max_num_seqs=32, seed=4)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        assert len(runs) == 4
+
+        source = _HFSource(repo_id="test/repo", revision=None, cache_dir=None)
+        hf_runs = LLMRuns(list(runs), _hf_source=source)
+
+        # Index by (task, batch) for clear assertions
+        path_index = {(r.task, r.max_num_seqs): r.results_path for r in runs}
+        all_paths = set(path_index.values())
+        prom_paths = {p.replace("results.json", "prometheus.json") for p in all_paths}
+        known = all_paths | prom_paths
+
+        def _side_effect(repo_id: str, filename: str, **kwargs: object) -> str:
+            if filename in known:
+                return filename
+            raise FileNotFoundError(f"mock: unknown file {filename}")
+
+        # Filter to gpqa + batch=16: should be exactly 1 run
+        filtered = hf_runs.task("gpqa").batch(16)
+        assert len(filtered) == 1
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            side_effect=_side_effect,
+        ) as mock:
+            filtered.output_lengths()
+            downloaded = {call.args[1] for call in mock.call_args_list}
+            assert path_index[("gpqa", 16)] in downloaded
+            assert path_index[("gpqa", 32)] not in downloaded
+            assert path_index[("lm-arena-chat", 16)] not in downloaded
+            assert path_index[("lm-arena-chat", 32)] not in downloaded
+
+    def test_timelines_uses_selective_download(
+        self,
+        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+    ) -> None:
+        """timelines() on a filtered collection should also scope downloads."""
+        hf_runs, paths_by_batch = multi_run_setup
+        filtered = hf_runs.batch(32)
+        assert len(filtered) == 1
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            side_effect=self._mock_download(paths_by_batch),
+        ) as mock:
+            with contextlib.suppress(Exception):
+                filtered.timelines(metric="power.device_instant")
+            downloaded = {call.args[1] for call in mock.call_args_list}
+            assert paths_by_batch[32] in downloaded
+            assert paths_by_batch[8] not in downloaded
+            assert paths_by_batch[16] not in downloaded
+
+    def test_prefetch_downloads_current_scope(
+        self,
+        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+    ) -> None:
+        """prefetch() on a filtered collection only downloads that subset."""
+        hf_runs, paths_by_batch = multi_run_setup
+        filtered = hf_runs.batch(8, 16)
+        assert len(filtered) == 2
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            side_effect=self._mock_download(paths_by_batch),
+        ) as mock:
+            filtered.prefetch()
+            downloaded = {call.args[1] for call in mock.call_args_list}
+            assert paths_by_batch[8] in downloaded
+            assert paths_by_batch[16] in downloaded
+            assert paths_by_batch[32] not in downloaded
+
+    def test_cache_prevents_repeated_downloads(
+        self,
+        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+    ) -> None:
+        """Second call to output_lengths() should not re-download."""
+        hf_runs, paths_by_batch = multi_run_setup
+        filtered = hf_runs.batch(8)
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            side_effect=self._mock_download(paths_by_batch),
+        ) as mock:
+            filtered.output_lengths()
+            first_count = mock.call_count
+            assert first_count >= 1
+            filtered.output_lengths()
+            assert mock.call_count == first_count

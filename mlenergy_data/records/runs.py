@@ -1374,14 +1374,21 @@ class LLMRuns:
         energies = runs.task("gpqa").data.energy_per_token_joules
     """
 
-    def __init__(self, runs: Sequence[LLMRun], *, _hf_source: _HFSource | None = None) -> None:
+    def __init__(
+        self,
+        runs: Sequence[LLMRun],
+        *,
+        _hf_source: _HFSource | None = None,
+        _stable_only: bool = False,
+    ) -> None:
         self._runs = tuple(runs)
         self._cache: dict[str, Any] = {}
         self._hf_source = _hf_source
+        self._stable_only = _stable_only
 
     def _derive(self, runs: Sequence[LLMRun]) -> LLMRuns:
         """Create a derived collection preserving source metadata."""
-        return LLMRuns(runs, _hf_source=self._hf_source)
+        return LLMRuns(runs, _hf_source=self._hf_source, _stable_only=self._stable_only)
 
     def _ensure_raw_files(self) -> dict[str, str]:
         """Ensure raw results files are available locally.
@@ -1440,13 +1447,15 @@ class LLMRuns:
     def prefetch(self) -> LLMRuns:
         """Eagerly download all raw files for this collection.
 
-        When loaded from HF Hub, downloads all raw results.json and
-        prometheus.json files for every run in the collection. Useful
+        When loaded from HF Hub, downloads all raw `results.json` and
+        `prometheus.json` files for every run in the collection. Useful
         when you know you'll need all raw data and want to pay the download
         cost upfront rather than lazily.
 
-        Returns self for chaining:
-            runs = LLMRuns.from_hf().prefetch()
+        The full unfiltered dataset is ~100 GB. Filter first to limit
+        download size:
+
+            runs = LLMRuns.from_hf().task("gpqa").prefetch()
         """
         self._ensure_raw_files()
         return self
@@ -1500,10 +1509,7 @@ class LLMRuns:
             revision=revision,
             cache_dir=cache_dir,
         )
-        instance = cls.from_parquet(
-            parquet_path,
-            stable_only=stable_only,
-        )
+        instance = cls.from_parquet(parquet_path, stable_only=stable_only)
         instance._hf_source = source
         return instance
 
@@ -1542,7 +1548,7 @@ class LLMRuns:
             runs_list.append(LLMRun(**kw))
         runs_list.sort(key=lambda r: (r.task, r.model_id, r.gpu_model, r.num_gpus, r.max_num_seqs))
         logger.info("LLMRuns.from_parquet: returning %d runs", len(runs_list))
-        return cls(runs_list)
+        return cls(runs_list, _stable_only=stable_only)
 
     @classmethod
     def from_raw_results(
@@ -1595,7 +1601,7 @@ class LLMRuns:
         )
         llm_runs = [r for r in rows if isinstance(r, LLMRun)]
         llm_runs.sort(key=lambda r: (r.task, r.model_id, r.gpu_model, r.num_gpus, r.max_num_seqs))
-        result = cls(llm_runs)
+        result = cls(llm_runs, _stable_only=stable_only)
         logger.info("LLMRuns.from_raw_results: returning %d runs", len(llm_runs))
         return result
 
@@ -1663,14 +1669,28 @@ class LLMRuns:
         return self._cache[key]
 
     def unstable(self) -> LLMRuns:
-        """Filter to unstable runs only."""
+        """Filter to unstable runs only.
+
+        Raises:
+            ValueError: If this collection was loaded with ``stable_only=True``,
+                since unstable runs were already filtered out at load time.
+        """
+        if self._stable_only:
+            raise ValueError(
+                "Cannot filter unstable runs: this collection was loaded with "
+                "stable_only=True. Reload with stable_only=False to access unstable runs."
+            )
         key = "_unstable"
         if key not in self._cache:
             self._cache[key] = self._derive([r for r in self._runs if not r.is_stable])
         return self._cache[key]
 
     def where(self, predicate: Callable[[LLMRun], bool]) -> LLMRuns:
-        """Filter runs by an arbitrary predicate."""
+        """Filter runs by an arbitrary predicate.
+
+        Args:
+            predicate: Function that takes an `LLMRun` and returns True to keep it.
+        """
         return self._derive([r for r in self._runs if predicate(r)])
 
     def _filter(self, field: str, values: tuple[Any, ...]) -> LLMRuns:
@@ -1714,8 +1734,12 @@ class LLMRuns:
     def group_by(self, *fields: str) -> dict[Any, LLMRuns]:
         """Group runs by one or more fields.
 
-        Single field:  {value: LLMRuns, ...}
-        Multi field:   {(v1, v2): LLMRuns, ...}
+        Args:
+            fields: One or more `LLMRun` field names to group by.
+
+        Returns:
+            Single field: `{value: LLMRuns, ...}`.
+            Multiple fields: `{(v1, v2, ...): LLMRuns, ...}`.
         """
         key = f"_group_by_{fields}"
         if key not in self._cache:
@@ -1743,7 +1767,12 @@ class LLMRuns:
 
     def __add__(self, other: LLMRuns) -> LLMRuns:
         source = self._hf_source if self._hf_source == other._hf_source else None
-        return LLMRuns(list(self._runs) + list(other._runs), _hf_source=source)
+        stable_only = self._stable_only and other._stable_only
+        return LLMRuns(
+            list(self._runs) + list(other._runs),
+            _hf_source=source,
+            _stable_only=stable_only,
+        )
 
     def __repr__(self) -> str:
         return f"LLMRuns({len(self._runs)} runs)"
@@ -1759,6 +1788,11 @@ class LLMRuns:
 
         When loaded from HF Hub, automatically downloads the raw files
         needed for the current (possibly filtered) collection.
+
+        Args:
+            include_unsuccessful: If True, include requests that failed
+                during benchmarking (`success=False` in `results.json`).
+                Defaults to False (only successful requests).
 
         Returns:
             DataFrame with columns: results_path, task, model_id,
@@ -1820,6 +1854,11 @@ class LLMRuns:
 
         When loaded from HF Hub, automatically downloads the raw files
         needed for the current (possibly filtered) collection.
+
+        Args:
+            metric: Which timeline to extract. Supported values:
+                `"power.device_instant"`, `"power.device_average"`,
+                `"temperature"`.
 
         Returns:
             DataFrame with columns: results_path, domain, task, model_id,
@@ -1940,13 +1979,15 @@ class DiffusionRuns:
     def prefetch(self) -> DiffusionRuns:
         """Eagerly download all raw files for this collection.
 
-        When loaded from HF Hub, downloads all raw results.json files
+        When loaded from HF Hub, downloads all raw `results.json` files
         for every run in the collection. Useful when you know you'll need
         all raw data and want to pay the download cost upfront rather than
         lazily.
 
-        Returns self for chaining:
-            runs = DiffusionRuns.from_hf().prefetch()
+        The full unfiltered dataset is ~100 GB. Filter first to limit
+        download size:
+
+            runs = DiffusionRuns.from_hf().task("text-to-image").prefetch()
         """
         self._ensure_raw_files()
         return self
@@ -2119,7 +2160,11 @@ class DiffusionRuns:
         return self._filter("weight_precision", prec)
 
     def where(self, predicate: Callable[[DiffusionRun], bool]) -> DiffusionRuns:
-        """Filter runs by an arbitrary predicate."""
+        """Filter runs by an arbitrary predicate.
+
+        Args:
+            predicate: Function that takes a `DiffusionRun` and returns True to keep it.
+        """
         return self._derive([r for r in self._runs if predicate(r)])
 
     def _filter(self, field: str, values: tuple[Any, ...]) -> DiffusionRuns:
@@ -2161,7 +2206,15 @@ class DiffusionRuns:
         return self._cache[key]
 
     def group_by(self, *fields: str) -> dict[Any, DiffusionRuns]:
-        """Group runs by one or more fields."""
+        """Group runs by one or more fields.
+
+        Args:
+            fields: One or more `DiffusionRun` field names to group by.
+
+        Returns:
+            Single field: `{value: DiffusionRuns, ...}`.
+            Multiple fields: `{(v1, v2, ...): DiffusionRuns, ...}`.
+        """
         key = f"_group_by_{fields}"
         if key not in self._cache:
             groups: dict[Any, list[DiffusionRun]] = defaultdict(list)
@@ -2204,6 +2257,11 @@ class DiffusionRuns:
 
         When loaded from HF Hub, automatically downloads the raw files
         needed for the current (possibly filtered) collection.
+
+        Args:
+            metric: Which timeline to extract. Supported values:
+                `"power.device_instant"`, `"power.device_average"`,
+                `"temperature"`.
 
         Returns:
             DataFrame with columns: results_path, domain, task, model_id,

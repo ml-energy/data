@@ -70,8 +70,8 @@ def extract_device_timeline(
         ss_start_f = 0.0
         ss_end_f = 0.0
 
-    gpu_ids = sorted(device_inst.keys(), key=lambda x: int(x))
-    base_gpu = gpu_ids[0]
+    gpu_ids = sorted(int(k) for k in device_inst)
+    base_gpu = str(gpu_ids[0])
     base_points = device_inst[base_gpu]
 
     timestamps: list[float] = []
@@ -91,7 +91,7 @@ def extract_device_timeline(
 
     cols: list[str] = []
     for gid in gpu_ids:
-        series = device_inst[gid]
+        series = device_inst[str(gid)]
         if steady_state_only:
             filtered = [
                 (float(ts), float(v)) for ts, v in series if ss_start_f <= float(ts) <= ss_end_f
@@ -124,20 +124,33 @@ def extract_power_device_average(results: dict[str, Any]) -> pd.DataFrame:
 def extract_temperature_timeseries(results: dict[str, Any]) -> pd.DataFrame:
     """Extract device temperature timeseries.
 
-    Temperature metric names vary across generators. This resolves in order:
-    `timeline.temperature.device_instant`,
-    `timeline.temperature.device_average`,
-    `timeline.temperature.device`.
+    Handles two layouts:
+
+    - Nested (like power): `timeline.temperature.<metric_name>.<gpu_id>`
+    - Flat: `timeline.temperature.<gpu_id>` (GPU indices directly under temperature)
+
+    The flat layout is auto-detected when all values under `temperature` are
+    lists (timeseries data) rather than dicts (metric-name sub-groups).
     """
     timeline = results.get("timeline")
     if not isinstance(timeline, dict):
         raise ValueError("results.timeline is missing or not a dict")
-    group = timeline.get("temperature")
-    if not isinstance(group, dict):
+    temp = timeline.get("temperature")
+    if not isinstance(temp, dict):
         raise ValueError("timeline.temperature missing")
 
+    # Detect flat layout: values are lists (timeseries), not dicts (sub-groups).
+    is_flat = all(isinstance(v, list) for v in temp.values())
+    if is_flat:
+        patched = {**results, "timeline": {**timeline, "temperature": {"device": temp}}}
+        return extract_device_timeline(
+            patched,
+            metric_group="temperature",
+            metric_name="device",
+        )
+
     for metric_name in ("device_instant", "device_average", "device"):
-        if metric_name in group:
+        if metric_name in temp:
             return extract_device_timeline(
                 results,
                 metric_group="temperature",

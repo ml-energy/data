@@ -1,6 +1,6 @@
 # The ML.ENERGY Benchmark V3 Dataset
 
-This dataset contains benchmark results from [The ML.ENERGY Benchmark](https://github.com/ml-energy/benchmark).
+This dataset contains benchmark results from [The ML.ENERGY Benchmark](https://github.com/ml-energy/benchmark), which includes LLM and diffusion inference runs on NVIDIA H100 and B200 GPUs.
 You can use [The ML.ENERGY Leaderboard](https://ml.energy) to explore the benchmarking results.
 
 ## Subsets
@@ -10,7 +10,7 @@ You can use [The ML.ENERGY Leaderboard](https://ml.energy) to explore the benchm
 
 ## Usage
 
-You can programmatically utilize the dataset using the ML.ENERGY data toolkit.
+You can programmatically work with the dataset using the [ML.ENERGY data toolkit](https://github.com/ml-energy/data).
 
 ```bash
 pip install mlenergy-data
@@ -20,14 +20,36 @@ pip install mlenergy-data
 from mlenergy_data.records import LLMRuns, DiffusionRuns
 
 # Load (fast, parquet only ~few MB)
-llm = LLMRuns.from_hf()
+runs = LLMRuns.from_hf()
 
-# Filter and analyze (parquet only, no download)
-for r in llm.task("gpqa").gpu("B200"):
-    print(r.nickname, r.energy_per_token_joules)
+# Find the most energy-efficient model on GPQA
+best = min(runs.task("gpqa"), key=lambda r: r.energy_per_token_joules)
+print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok on {best.gpu_model}")
 
-# Bulk data methods auto-download raw files as needed
-out = llm.task("gpqa").output_lengths()
+# Column access via .data
+energies = runs.data.energy_per_token_joules  # list[float]
+```
+
+Filter, group, and compare across GPU generations and model architectures:
+
+```python
+# Compare GPU generations: best energy efficiency per model on GPQA
+for gpu, group in runs.task("gpqa").group_by("gpu_model").items():
+    best = min(group, key=lambda r: r.energy_per_token_joules)
+    print(f"{gpu}: {best.nickname} @ {best.energy_per_token_joules:.3f} J/tok, "
+          f"{best.output_throughput_tokens_per_sec:.0f} tok/s")
+
+# MoE, Dense, Hybrid: who's more energy-efficient?
+for arch, group in runs.task("gpqa").gpu("B200").group_by("architecture").items():
+    best = min(group, key=lambda r: r.energy_per_token_joules)
+    print(f"{arch}: {best.nickname} @ {best.energy_per_token_joules:.3f} J/tok")
+```
+
+Bulk data methods auto-download raw files as needed:
+
+```python
+# Power timelines, output lengths, etc.
+power_tl = runs.timelines(metric="power.device_instant")
 ```
 
 ## Schema
@@ -74,7 +96,7 @@ Please direct any issues, questions, or discussions to [The ML.ENERGY Data Toolk
 
 ```bibtex
 @inproceedings{mlenergy-neuripsdb25,
-    title={The {ML.ENERGY Benchmark}: Toward Automated Inference Energy Measurement and Optimization}, 
+    title={The {ML.ENERGY Benchmark}: Toward Automated Inference Energy Measurement and Optimization},
     author={Jae-Won Chung and Jeff J. Ma and Ruofan Wu and Jiachen Liu and Oh Jun Kweon and Yuxuan Xia and Zhiyu Wu and Mosharaf Chowdhury},
     year={2025},
     booktitle={NeurIPS Datasets and Benchmarks},

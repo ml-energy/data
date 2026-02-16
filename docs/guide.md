@@ -4,9 +4,19 @@
 
 For full working examples of the toolkit in production, see:
 
-- [ML.ENERGY Leaderboard data build](https://github.com/ml-energy/leaderboard/blob/main/scripts/build_data.py) -- builds the leaderboard JSON data from benchmark runs
-- [ML.ENERGY Blog analysis scripts](https://github.com/ml-energy/data/blob/main/blog_analysis_scripts.py) -- generates figures for the ML.ENERGY blog
-- [OpenG2G simulation data build](TODO) -- builds power traces, logistic fits, and latency fits for grid simulation
+- ML.ENERGY Leaderboard data build
+   - Builds the leaderboard JSON data from benchmark runs
+   - [The ML.ENERGY Leaderboard](https://ml.energy/leaderboard)
+   - [Data build script](https://github.com/ml-energy/leaderboard/blob/main/scripts/build_data.py)
+- ML.ENERGY Blog analysis scripts
+   - Generates figures for the ML.ENERGY blog post on the V3 benchmark results
+   - [Blog post](https://ml.energy/blog/measurement/energy/diagnosing-inference-energy-consumption-with-the-mlenergy-leaderboard-v30/)
+   - [Analysis script](TODO)
+- OpenG2G simulation data build
+   - Builds power traces, logistic fits, and latency distributions for datacenter--grid coordination simulation
+   - [OpenG2G](TODO)
+   - [Data build script](TODO)
+
 
 ## Loading benchmark runs
 
@@ -17,7 +27,8 @@ Each run is a frozen dataclass (`LLMRun` / `DiffusionRun`) with IDE autocomplete
 from mlenergy_data.records import LLMRuns, DiffusionRuns
 
 # Load all stable LLM runs from a compiled data directory
-runs = LLMRuns.from_directory("/path/to/compiled/data")
+root = "/path/to/compiled/data"
+runs = LLMRuns.from_directory(root)
 
 # Include unstable runs
 runs = LLMRuns.from_directory(root, stable_only=False)
@@ -29,6 +40,9 @@ diff = DiffusionRuns.from_directory(root)
 runs = LLMRuns.from_hf()
 diff = DiffusionRuns.from_hf()
 ```
+
+!!! Note
+    A "compiled data directory" is one built by `data_publishing/build_hf_data.py` (or downloaded from HF Hub). It contains parquet summary files under `runs/`, raw result files under `llm/` and `diffusion/`, and benchmark config files under `configs/`.
 
 ## Filtering
 
@@ -49,6 +63,9 @@ chat_or_gpqa = runs.task("gpqa", "lm-arena-chat")
 # By nickname
 deepseek = runs.nickname("DeepSeek R1")
 
+# Architecture (LLM only)
+moe_models = runs.architecture("MoE")
+
 # Batch size: exact values or range
 batch_128 = runs.batch(128)
 large_batch = runs.batch(min=64)
@@ -57,6 +74,11 @@ mid_batch = runs.batch(min=16, max=128)
 # GPU count: exact or range
 single_gpu = runs.num_gpus(1)
 multi_gpu = runs.num_gpus(min=2)
+
+# Stability
+# Relevant when you explicitly set stable_only=False at load time to include unstable runs. By default, only stable runs are loaded.
+stable_only = runs.stable()
+unstable_only = runs.unstable()
 
 # Arbitrary predicate
 big_models = runs.where(lambda r: r.total_params_billions > 70)
@@ -95,6 +117,17 @@ plt.xlabel("Batch size")
 plt.ylabel("Energy per token (J)")
 ```
 
+**Indexing and concatenation:**
+
+```python
+first_run = runs[0]
+
+# Concatenate collections
+h100 = runs.gpu("H100")
+b200 = runs.gpu("B200")
+combined = h100 + b200
+```
+
 ## Grouping
 
 ```python
@@ -113,12 +146,12 @@ for (model, batch), g in runs.group_by("model_id", "max_num_seqs").items():
 Python is the analysis layer — no special helper functions needed:
 
 ```python
-# Best energy per token for each model on a task
-for model_id, group in runs.task("gpqa").group_by("model_id").items():
-    best = min(group, key=lambda r: r.energy_per_token_joules)
-    print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok")
+# Compare GPU generations on a task
+for gpu, group in runs.task("lm-arena-chat").group_by("gpu_model").items():
+    best = min(group, key=lambda r: r.output_throughput_tokens_per_sec)
+    print(f"{gpu}: {best.nickname} @ {best.output_throughput_tokens_per_sec:.0f} tok/s")
 
-# Comparing GPUs
+# Comparing GPUs for a specific model
 llama70b = runs.model("meta-llama/Llama-3.1-70B-Instruct")
 for gpu, g in llama70b.group_by("gpu_model").items():
     plt.scatter(g.data.max_num_seqs, g.data.energy_per_token_joules, label=gpu)
@@ -129,6 +162,14 @@ plt.legend()
 
 These methods return pandas DataFrames for numerical analysis.
 When loaded from HF Hub (`from_hf()`), they automatically download only the raw files needed for the current collection. The download scope is determined by your filters. HF Hub caches files locally, so repeated calls are instant.
+
+To eagerly download all raw files upfront, use `prefetch()`:
+
+```python
+# Eagerly download all raw files for a filtered collection
+runs = LLMRuns.from_hf().task("gpqa").prefetch()
+power_tl = runs.timelines(metric="power.device_instant")  # no download delay
+```
 
 ```python
 # Power timelines (long-form)
@@ -157,6 +198,12 @@ diff = DiffusionRuns.from_directory(root)
 t2i = diff.task("text-to-image")
 best = min(t2i, key=lambda r: r.energy_per_generation_joules)
 print(f"{best.nickname}: {best.energy_per_generation_joules:.3f} J/image")
+
+# Task field and convenience properties
+r = diff[0]
+r.task               # "text-to-image" or "text-to-video"
+r.is_text_to_image   # True for text-to-image tasks
+r.is_text_to_video   # True for text-to-video tasks
 
 # Available filters: task(), model(), gpu(), nickname(), batch(),
 # num_gpus(), precision(), where()
@@ -205,16 +252,4 @@ avg_itl = model.sample_avg(n_replicas=180, rng=rng)
 # Serialize / deserialize
 d = model.to_dict()
 model2 = ITLMixtureModel.from_dict(d)
-```
-
-## Building a Hugging Face data package
-
-```bash
-python data_publishing/build_hf_data.py \
-  --results-dir /path/to/llm/h100/current/run \
-  --results-dir /path/to/diffusion/h100/current/run \
-  --out-dir /tmp/hf_pkg
-
-# Upload to Hugging Face Hub
-hf upload-large-folder ml-energy/benchmark-v3 /tmp/hf_pkg --repo-type dataset
 ```

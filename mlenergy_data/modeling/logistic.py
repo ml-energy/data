@@ -28,7 +28,7 @@ class LogisticModel:
     b0: float
 
     def eval_x(self, x: float) -> float:
-        """Evaluate at continuous x (= log2(batch_size))."""
+        """Evaluate at continuous x (typically log2(batch_size))."""
         a = self.k * (float(x) - self.x0)
         if a >= 0:
             ea = math.exp(-a)
@@ -39,7 +39,7 @@ class LogisticModel:
         return float(self.b0 + self.L * s)
 
     def deriv_wrt_x(self, x: float) -> float:
-        """dy/dx for y = b0 + L * sigmoid(k*(x - x0))."""
+        """Derivative dy/dx at continuous x."""
         a = self.k * (float(x) - self.x0)
         if a >= 0:
             ea = math.exp(-a)
