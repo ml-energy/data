@@ -103,7 +103,7 @@ for task, group in runs.group_by("task").items():
     print(f"{task}: {len(group)} runs")
 
 # Group by multiple fields
-for (model, batch), g in runs.group_by("model_label", "max_num_seqs").items():
+for (model, batch), g in runs.group_by("model_id", "max_num_seqs").items():
     best = min(g, key=lambda r: r.energy_per_token_joules)
     print(f"{model} @ batch={batch}: {best.energy_per_token_joules:.3f} J/tok")
 ```
@@ -133,14 +133,14 @@ When loaded from HF Hub (`from_hf()`), they automatically download only the raw 
 ```python
 # Power timelines (long-form)
 power_tl = runs.timelines(metric="power.device_instant")
-# Columns: results_path, model_label, num_gpus, max_num_seqs, relative_time_s, value, metric
+# Columns: results_path, domain, task, model_id, num_gpus, max_num_seqs, batch_size, timestamp, relative_time_s, value, metric
 
 # Temperature timelines
 temp_tl = runs.timelines(metric="temperature")
 
 # Output lengths
 out_df = runs.output_lengths()
-# Columns: results_path, task, model_id, model_label, num_gpus, max_num_seqs, output_len, success
+# Columns: results_path, task, model_id, num_gpus, max_num_seqs, output_len, success
 
 # Full DataFrame (one row per run, all fields as columns)
 df = runs.to_dataframe()
@@ -159,7 +159,7 @@ best = min(t2i, key=lambda r: r.energy_per_generation_joules)
 print(f"{best.nickname}: {best.energy_per_generation_joules:.3f} J/image")
 
 # Available filters: task(), model(), gpu(), nickname(), batch(),
-# num_gpus(), precision(), label(), where()
+# num_gpus(), precision(), where()
 ```
 
 ## Model fitting

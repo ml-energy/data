@@ -317,20 +317,6 @@ def test_llm_runs_multi_field_group_by(tmp_path: Path) -> None:
     assert len(groups[key]) == 2
 
 
-def test_llm_runs_label_filter(tmp_path: Path) -> None:
-    root = tmp_path / "bench"
-    cfg_root = tmp_path / "cfg"
-    _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
-
-    runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-    label = runs[0].model_label
-    filtered = runs.label(label)
-    assert len(filtered) == 1
-
-    empty = runs.label("nonexistent-label")
-    assert len(empty) == 0
-
-
 def test_llm_runs_num_gpus_filter(tmp_path: Path) -> None:
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -711,19 +697,3 @@ def test_diffusion_runs_precision_filter(tmp_path: Path) -> None:
 
     fp8 = runs.precision("fp8")
     assert len(fp8) == 0
-
-
-def test_diffusion_runs_label_filter(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
-
-    root = tmp_path / "bench"
-    cfg_root = tmp_path / "cfg"
-    _make_diffusion_fixture(root, cfg_root, batch=1)
-
-    runs = DiffusionRuns.from_raw_results(root, config_dir=cfg_root)
-    label = runs[0].model_label
-    filtered = runs.label(label)
-    assert len(filtered) == 1
-
-    empty = runs.label("nonexistent-label")
-    assert len(empty) == 0

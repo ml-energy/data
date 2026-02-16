@@ -150,6 +150,12 @@ def _copy_raw_results(
             except ValueError:
                 continue
             dst = out_dir / rel
+            if dst.exists():
+                src_stat = src.stat()
+                dst_stat = dst.stat()
+                if src_stat.st_size == dst_stat.st_size and src_stat.st_mtime == dst_stat.st_mtime:
+                    skipped += 1
+                    continue
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
             copied += 1

@@ -163,9 +163,8 @@ def load_timeline_table(
 
     Returns:
         Long-form DataFrame with columns `results_path`, `domain`, `task`,
-        `model_id`, `model_label`, `num_gpus`, `max_num_seqs`,
-        `batch_size`, `timestamp`, `relative_time_s`, `value`,
-        `metric`.
+        `model_id`, `num_gpus`, `max_num_seqs`, `batch_size`,
+        `timestamp`, `relative_time_s`, `value`, `metric`.
     """
     if isinstance(records, pd.DataFrame):
         rec_list: list[dict[str, Any]] = records.to_dict(orient="records")
@@ -175,11 +174,6 @@ def load_timeline_table(
     logger.info("Extracting timelines (metric=%s) for %d runs", metric, len(rec_list))
     rows: list[pd.DataFrame] = []
     for rec in rec_list:
-        if rec.get("model_label") is None:
-            raise ValueError(
-                "Missing required model_label in run table for "
-                f"results_path={rec.get('results_path')}"
-            )
         p = Path(str(rec.get("resolved_path", rec["results_path"])))
         payload = json.loads(p.read_text())
         if metric == "power.device_instant":
@@ -203,7 +197,6 @@ def load_timeline_table(
                 "domain": rec["domain"],
                 "task": rec["task"],
                 "model_id": rec["model_id"],
-                "model_label": rec["model_label"],
                 "num_gpus": rec["num_gpus"],
                 "max_num_seqs": rec.get("max_num_seqs"),
                 "batch_size": rec.get("batch_size"),
@@ -222,7 +215,6 @@ def load_timeline_table(
                 "domain",
                 "task",
                 "model_id",
-                "model_label",
                 "num_gpus",
                 "max_num_seqs",
                 "batch_size",

@@ -547,9 +547,7 @@ def _llm_row(
         task=parsed.workload,
         gpu_model=str(gpu_sku or parsed.gpu_family).upper(),
         model_id=model_id,
-        model_name=parsed.model,
         nickname=nickname,
-        model_label="",
         architecture=architecture,
         total_params_billions=total_params,
         activated_params_billions=active_params,
@@ -687,11 +685,9 @@ def _diffusion_row(
         task=parsed.workload,
         gpu_model=parsed.gpu_family.upper(),
         model_id=model_id,
-        model_name=parsed.model,
         nickname=(
             str(nickname_raw) if isinstance(nickname_raw, str) and nickname_raw else parsed.model
         ),
-        model_label="",
         total_params_billions=total_params,
         activated_params_billions=active_params,
         weight_precision=(
@@ -715,53 +711,6 @@ def _diffusion_row(
         throughput_generations_per_sec=throughput,
         results_path=str(p),
     )
-
-
-def _derive_model_labels(
-    runs: list[LLMRun | DiffusionRun],
-) -> list[LLMRun | DiffusionRun]:
-    """Derive model_label and return new list with labels set."""
-    llm_pairs: set[tuple[str, int]] = set()
-    for run in runs:
-        if isinstance(run, LLMRun):
-            llm_pairs.add((run.model_id, run.num_gpus))
-
-    by_model: dict[str, set[int]] = defaultdict(set)
-    for model_id, ng in llm_pairs:
-        by_model[model_id].add(ng)
-
-    used: set[str] = set()
-    label_by_pair: dict[tuple[str, int], str] = {}
-    for model_id, ng in sorted(llm_pairs):
-        base = model_id.split("/")[-1]
-        if len(by_model[model_id]) > 1:
-            base = f"{base}_ng{ng}"
-        label = base
-        i = 2
-        while label in used:
-            label = f"{base}_{i}"
-            i += 1
-        used.add(label)
-        label_by_pair[(model_id, ng)] = label
-
-    result: list[LLMRun | DiffusionRun] = []
-    for run in runs:
-        if isinstance(run, DiffusionRun):
-            nick = run.nickname
-            if not nick:
-                raise ValueError(
-                    f"Missing required nickname while deriving model labels "
-                    f"for results_path={run.results_path}"
-                )
-            result.append(replace(run, model_label=nick))
-        else:
-            key = (run.model_id, run.num_gpus)
-            if key not in label_by_pair:
-                raise KeyError(
-                    f"Missing model label mapping for model_id={key[0]} num_gpus={key[1]}"
-                )
-            result.append(replace(run, model_label=label_by_pair[key]))
-    return result
 
 
 def _load_runs_from_roots(
@@ -864,8 +813,6 @@ def _load_runs_from_roots(
         if isinstance(row, LLMRun):
             rows[i] = replace(row, is_stable=not is_unstable, unstable_reason=reason)
 
-    rows = _derive_model_labels(rows)
-
     if stable_only:
         rows = [r for r in rows if not isinstance(r, LLMRun) or r.is_stable]
 
@@ -897,9 +844,7 @@ class LLMRun:
         domain: Always ``"llm"``.
         task: Benchmark task (e.g. ``"gpqa"``, ``"lm-arena-chat"``).
         model_id: Full HF model identifier (e.g. ``"meta-llama/Llama-3.1-8B-Instruct"``).
-        model_name: Short model name without organization prefix.
         nickname: Human-friendly display name from ``model_info.json``.
-        model_label: Derived label unique within a dataset (e.g. ``"Llama-3.1-8B-Instruct"``).
         architecture: Model architecture (``"Dense"`` or ``"MoE"``).
         total_params_billions: Total parameter count in billions.
         activated_params_billions: Activated parameter count in billions (equals total for dense).
@@ -938,9 +883,7 @@ class LLMRun:
     domain: str
     task: str
     model_id: str
-    model_name: str
     nickname: str
-    model_label: str
     architecture: str
     total_params_billions: float
     activated_params_billions: float
@@ -984,9 +927,7 @@ class DiffusionRun:
         domain: Always ``"diffusion"``.
         task: Benchmark task (``"text-to-image"`` or ``"text-to-video"``).
         model_id: Full HF model identifier.
-        model_name: Short model name without organization prefix.
         nickname: Human-friendly display name from ``model_info.json``.
-        model_label: Derived label (defaults to nickname for diffusion models).
         total_params_billions: Total parameter count in billions.
         activated_params_billions: Activated parameter count in billions.
         weight_precision: Weight precision (e.g. ``"bfloat16"``, ``"fp8"``).
@@ -1011,9 +952,7 @@ class DiffusionRun:
     domain: str
     task: str
     model_id: str
-    model_name: str
     nickname: str
-    model_label: str
     total_params_billions: float
     activated_params_billions: float
     weight_precision: str
@@ -1095,18 +1034,8 @@ class _LLMRunsData:
             ...
 
         @property
-        def model_name(self) -> list[str]:
-            """Short model name."""
-            ...
-
-        @property
         def nickname(self) -> list[str]:
             """Human-friendly display name."""
-            ...
-
-        @property
-        def model_label(self) -> list[str]:
-            """Derived unique label."""
             ...
 
         @property
@@ -1319,18 +1248,8 @@ class _DiffusionRunsData:
             ...
 
         @property
-        def model_name(self) -> list[str]:
-            """Short model name."""
-            ...
-
-        @property
         def nickname(self) -> list[str]:
             """Human-friendly display name."""
-            ...
-
-        @property
-        def model_label(self) -> list[str]:
-            """Derived label."""
             ...
 
         @property
@@ -1635,8 +1554,8 @@ class LLMRuns:
     ) -> LLMRuns:
         """Load runs from raw benchmark result directories.
 
-        Parses ``results.json`` files, computes stability, derives model
-        labels, and returns the filtered collection.
+        Parses ``results.json`` files, computes stability, and returns
+        the filtered collection.
 
         A run is considered **unstable** if any of the following hold:
 
@@ -1686,10 +1605,6 @@ class LLMRuns:
     def model(self, *model_ids: str) -> LLMRuns:
         """Filter to runs matching any of the given model IDs."""
         return self._filter("model_id", model_ids)
-
-    def label(self, *labels: str) -> LLMRuns:
-        """Filter to runs matching any of the given model labels."""
-        return self._filter("model_label", labels)
 
     def gpu(self, *gpu_models: str) -> LLMRuns:
         """Filter to runs matching any of the given GPU models."""
@@ -1845,7 +1760,7 @@ class LLMRuns:
         needed for the current (possibly filtered) collection.
 
         Returns:
-            DataFrame with columns: results_path, task, model_id, model_label,
+            DataFrame with columns: results_path, task, model_id,
             num_gpus, max_num_seqs, output_len, success
 
         Raises:
@@ -1856,7 +1771,6 @@ class LLMRuns:
             "results_path",
             "task",
             "model_id",
-            "model_label",
             "num_gpus",
             "max_num_seqs",
             "output_len",
@@ -1892,7 +1806,6 @@ class LLMRuns:
                         "results_path": run.results_path,
                         "task": run.task,
                         "model_id": run.model_id,
-                        "model_label": run.model_label,
                         "num_gpus": run.num_gpus,
                         "max_num_seqs": run.max_num_seqs,
                         "output_len": int(output_len),
@@ -1909,7 +1822,7 @@ class LLMRuns:
 
         Returns:
             DataFrame with columns: results_path, domain, task, model_id,
-            model_label, num_gpus, max_num_seqs, batch_size, timestamp,
+            num_gpus, max_num_seqs, batch_size, timestamp,
             relative_time_s, value, metric
         """
         path_map = self._ensure_raw_files()
@@ -1920,7 +1833,6 @@ class LLMRuns:
                 "domain": r.domain,
                 "task": r.task,
                 "model_id": r.model_id,
-                "model_label": r.model_label,
                 "num_gpus": r.num_gpus,
                 "max_num_seqs": r.max_num_seqs,
             }
@@ -1933,7 +1845,6 @@ class LLMRuns:
                     "domain",
                     "task",
                     "model_id",
-                    "model_label",
                     "num_gpus",
                     "max_num_seqs",
                     "batch_size",
@@ -2126,8 +2037,7 @@ class DiffusionRuns:
     ) -> DiffusionRuns:
         """Load runs from raw benchmark result directories.
 
-        Parses ``results.json`` files, derives model labels, and returns
-        the collection.
+        Parses ``results.json`` files and returns the collection.
 
         Args:
             roots: One or more benchmark root directories (or results sub-dirs).
@@ -2164,10 +2074,6 @@ class DiffusionRuns:
     def gpu(self, *gpu_models: str) -> DiffusionRuns:
         """Filter to runs matching any of the given GPU models."""
         return self._filter("gpu_model", gpu_models)
-
-    def label(self, *labels: str) -> DiffusionRuns:
-        """Filter to runs matching any of the given model labels."""
-        return self._filter("model_label", labels)
 
     def num_gpus(
         self, *counts: int, min: int | None = None, max: int | None = None
@@ -2300,7 +2206,7 @@ class DiffusionRuns:
 
         Returns:
             DataFrame with columns: results_path, domain, task, model_id,
-            model_label, num_gpus, max_num_seqs, batch_size, timestamp,
+            num_gpus, max_num_seqs, batch_size, timestamp,
             relative_time_s, value, metric
         """
         path_map = self._ensure_raw_files()
@@ -2311,7 +2217,6 @@ class DiffusionRuns:
                 "domain": r.domain,
                 "task": r.task,
                 "model_id": r.model_id,
-                "model_label": r.model_label,
                 "num_gpus": r.num_gpus,
                 "batch_size": r.batch_size,
             }
@@ -2324,7 +2229,6 @@ class DiffusionRuns:
                     "domain",
                     "task",
                     "model_id",
-                    "model_label",
                     "num_gpus",
                     "max_num_seqs",
                     "batch_size",

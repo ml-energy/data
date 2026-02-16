@@ -20,7 +20,7 @@ pip install mlenergy-data
 from mlenergy_data.records import LLMRuns, DiffusionRuns
 
 # Load (fast, parquet only ~few MB)
-llm = LLMRuns.from_hf("ml-energy/benchmark-v3")
+llm = LLMRuns.from_hf()
 
 # Filter and analyze (parquet only, no download)
 for r in llm.task("gpqa").gpu("B200"):
