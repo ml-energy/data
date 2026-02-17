@@ -11,6 +11,14 @@ For full working examples of the toolkit in production, see:
 | [OpenG2G Simulation](TODO) | Power traces and models for datacenter–grid simulation | [Link](TODO) |
 
 
+## Dataset Access
+
+The benchmark dataset ([`ml-energy/benchmark-v3`](https://huggingface.co/datasets/ml-energy/benchmark-v3)) is gated on Hugging Face Hub.
+Before loading data with `from_hf()`, you need to:
+
+1. Visit the [dataset page](https://huggingface.co/datasets/ml-energy/benchmark-v3) and request access (granted automatically).
+2. Set the `HF_TOKEN` environment variable to a [Hugging Face access token](https://huggingface.co/settings/tokens).
+
 ## Loading Benchmark Runs
 
 `LLMRuns` and `DiffusionRuns` are typed, immutable collections.

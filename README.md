@@ -19,6 +19,14 @@ This repository contains the toolkit code, not the data itself.
 pip install mlenergy-data
 ```
 
+## Dataset access
+
+The benchmark dataset ([`ml-energy/benchmark-v3`](https://huggingface.co/datasets/ml-energy/benchmark-v3)) is gated on Hugging Face Hub.
+Before using the toolkit to load data from HF, you need to:
+
+1. Visit the [dataset page](https://huggingface.co/datasets/ml-energy/benchmark-v3) and request access (granted automatically).
+2. Set the `HF_TOKEN` environment variable to a [Hugging Face access token](https://huggingface.co/settings/tokens).
+
 ## Quick example
 
 ```python

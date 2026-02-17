@@ -1506,11 +1506,18 @@ class LLMRuns:
     ) -> LLMRuns:
         """Load LLM runs from a Hugging Face dataset repository.
 
+        The default dataset is gated. Before calling this method:
+
+        1. Visit https://huggingface.co/datasets/ml-energy/benchmark-v3
+           and request access (granted automatically).
+        2. Set the `HF_TOKEN` environment variable to a Hugging Face
+           access token.
+
         Downloads only the parquet summary file (~few MB). Methods that
         need raw data (output_lengths(), timelines(), inter_token_latencies())
         will automatically download the required files on first access.
 
-        Respects the ``HF_HOME`` environment variable for cache location.
+        Respects the `HF_HOME` environment variable for cache location.
 
         Args:
             repo_id: HF dataset repository ID.
@@ -2070,11 +2077,18 @@ class DiffusionRuns:
     ) -> DiffusionRuns:
         """Load diffusion runs from a Hugging Face dataset repository.
 
+        The default dataset is gated. Before calling this method:
+
+        1. Visit https://huggingface.co/datasets/ml-energy/benchmark-v3
+           and request access (granted automatically).
+        2. Set the `HF_TOKEN` environment variable to a Hugging Face
+           access token.
+
         Downloads only the parquet summary file (~few MB). Methods that
         need raw data (timelines()) will automatically download the
         required files on first access.
 
-        Respects the ``HF_HOME`` environment variable for cache location.
+        Respects the `HF_HOME` environment variable for cache location.
 
         Args:
             repo_id: HF dataset repository ID.

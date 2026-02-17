@@ -3,13 +3,55 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
 from huggingface_hub import hf_hub_download, snapshot_download
+from huggingface_hub.errors import GatedRepoError, RepositoryNotFoundError
 
 logger = logging.getLogger(__name__)
+
+
+def _handle_hf_access_error(exc: RepositoryNotFoundError, repo_id: str) -> None:
+    """Re-raise HF Hub access errors with actionable guidance.
+
+    Args:
+        exc: The original exception from `huggingface_hub`.
+        repo_id: The HF dataset repository ID that was being accessed.
+
+    Raises:
+        GatedRepoError: With instructions to request access on the dataset page.
+        RepositoryNotFoundError: With instructions to set `HF_TOKEN`.
+    """
+    dataset_url = f"https://huggingface.co/datasets/{repo_id}"
+    if isinstance(exc, GatedRepoError):
+        raise GatedRepoError(
+            f"Access denied to gated dataset '{repo_id}'.\n"
+            f"Your Hugging Face token was recognized, but you have not been "
+            f"granted access to this dataset.\n"
+            f"Visit {dataset_url} and request access, then retry.",
+            response=exc.response,
+        ) from None
+    has_token = bool(os.environ.get("HF_TOKEN"))
+    if has_token:
+        raise RepositoryNotFoundError(
+            f"Could not access dataset '{repo_id}' (HTTP {exc.response.status_code}).\n"
+            f"Your HF_TOKEN is set but the request was rejected. "
+            f"Check that your token is valid and that you have been granted "
+            f"access at {dataset_url}.",
+            response=exc.response,
+        ) from None
+    raise RepositoryNotFoundError(
+        f"Could not access dataset '{repo_id}' (HTTP {exc.response.status_code}).\n"
+        f"This is a gated dataset that requires authentication.\n"
+        f"1. Set the HF_TOKEN environment variable to a Hugging Face access token.\n"
+        f"   (Create one at https://huggingface.co/settings/tokens)\n"
+        f"2. Visit {dataset_url} and request access.\n"
+        f"3. Retry after access is granted.",
+        response=exc.response,
+    ) from None
 
 
 class DatasetSource(Protocol):
@@ -46,13 +88,16 @@ class HFDatasetSource:
     allow_patterns: list[str] | None = None
 
     def local_root(self) -> Path:
-        local = snapshot_download(
-            repo_id=self.repo_id,
-            repo_type="dataset",
-            revision=self.revision,
-            cache_dir=(str(self.cache_dir) if self.cache_dir is not None else None),
-            allow_patterns=self.allow_patterns,
-        )
+        try:
+            local = snapshot_download(
+                repo_id=self.repo_id,
+                repo_type="dataset",
+                revision=self.revision,
+                cache_dir=(str(self.cache_dir) if self.cache_dir is not None else None),
+                allow_patterns=self.allow_patterns,
+            )
+        except RepositoryNotFoundError as e:
+            _handle_hf_access_error(e, self.repo_id)
         return Path(local)
 
 
@@ -74,12 +119,15 @@ def download_file(
     Returns:
         Local path to the downloaded file.
     """
-    local = hf_hub_download(
-        repo_id=repo_id,
-        filename=filename,
-        repo_type="dataset",
-        revision=revision,
-    )
+    try:
+        local = hf_hub_download(
+            repo_id=repo_id,
+            filename=filename,
+            repo_type="dataset",
+            revision=revision,
+        )
+    except RepositoryNotFoundError as e:
+        _handle_hf_access_error(e, repo_id)
     return Path(local)
 
 
