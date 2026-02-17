@@ -147,6 +147,11 @@ def _make_diffusion_fixture(
     )
 
 
+def _make_hf_source(root: Path, repo_id: str = "test/repo") -> _HFSource:
+    """Create an _HFSource with snapshot_root pointing at root."""
+    return _HFSource(repo_id=repo_id, revision=None, snapshot_root=root)
+
+
 class TestLLMParquetRoundTrip:
     """Test LLM runs survive parquet serialization + deserialization."""
 
@@ -419,7 +424,7 @@ class TestHFSourcePropagation:
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=2)
 
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _HFSource(repo_id="test/repo", revision=None, cache_dir=None)
+        source = _make_hf_source(root)
         return LLMRuns(list(runs), _hf_source=source)
 
     def test_filter_propagates_source(self, hf_runs: LLMRuns) -> None:
@@ -445,10 +450,17 @@ class TestHFSourcePropagation:
         combined = a + b
         assert combined._hf_source == hf_runs._hf_source
 
-    def test_add_different_source_drops(self, hf_runs: LLMRuns) -> None:
-        other_source = _HFSource(repo_id="other/repo", revision=None, cache_dir=None)
-        other = LLMRuns(list(hf_runs), _hf_source=other_source)
-        combined = hf_runs + other
+    def test_add_different_source_drops(self, tmp_path: Path) -> None:
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        source_a = _make_hf_source(root, repo_id="test/repo-a")
+        source_b = _make_hf_source(root, repo_id="test/repo-b")
+        a = LLMRuns(list(runs), _hf_source=source_a)
+        b = LLMRuns(list(runs), _hf_source=source_b)
+        combined = a + b
         assert combined._hf_source is None
 
     def test_auto_fetch_output_lengths(self, tmp_path: Path) -> None:
@@ -458,24 +470,25 @@ class TestHFSourcePropagation:
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
 
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _HFSource(repo_id="test/repo", revision=None, cache_dir=None)
-
-        actual_path = runs[0].results_path
+        source = _make_hf_source(root)
         hf_runs = LLMRuns(list(runs), _hf_source=source)
 
-        with patch("mlenergy_data.records.runs.download_file", return_value=actual_path) as mock:
+        actual_path = runs[0].results_path
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            return_value=Path(actual_path),
+        ) as mock:
             df = hf_runs.output_lengths()
             assert len(df) > 0
             assert mock.call_count >= 1
-            called_filenames = {call.args[1] for call in mock.call_args_list}
-            assert runs[0].results_path in called_filenames
 
 
 class TestSelectiveDownload:
     """Verify that filtering narrows the set of raw files downloaded."""
 
     @pytest.fixture()
-    def multi_run_setup(self, tmp_path: Path) -> tuple[LLMRuns, dict[int, str]]:
+    def multi_run_setup(self, tmp_path: Path) -> tuple[LLMRuns, Path, dict[int, str]]:
         """Build 3 runs with different batch sizes, return HF-sourced LLMRuns."""
         root = tmp_path / "bench"
         cfg_root = tmp_path / "cfg"
@@ -486,64 +499,62 @@ class TestSelectiveDownload:
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         assert len(runs) == 3
 
-        source = _HFSource(repo_id="test/repo", revision=None, cache_dir=None)
+        source = _make_hf_source(root)
         hf_runs = LLMRuns(list(runs), _hf_source=source)
         paths_by_batch = {r.max_num_seqs: r.results_path for r in runs}
-        return hf_runs, paths_by_batch
+        return hf_runs, root, paths_by_batch
 
-    def _mock_download(self, paths_by_batch: dict[int, str]):
-        """Return a side_effect that maps filenames to real local paths."""
-        all_paths = set(paths_by_batch.values())
-        prom_paths = {p.replace("results.json", "prometheus.json") for p in all_paths}
-        known = all_paths | prom_paths
+    def _rel(self, root: Path, path: str) -> str:
+        """Get the relative path that _ensure_raw_files will compute."""
+        return str(Path(path).relative_to(root))
 
-        def _side_effect(repo_id: str, filename: str, **kwargs: object) -> str:
-            if filename in known:
-                return filename
-            raise FileNotFoundError(f"mock: unknown file {filename}")
+    def _mock_download(self, root: Path, paths_by_batch: dict[int, str]):
+        """Return a side_effect that accepts relative HF filenames."""
+
+        def _side_effect(repo_id: str, filename: str, **kwargs: object) -> Path:
+            return root / filename
 
         return _side_effect
 
     def test_filtered_downloads_only_matching_files(
         self,
-        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+        multi_run_setup: tuple[LLMRuns, Path, dict[int, str]],
     ) -> None:
         """Filtering to batch=8 should only download files for that one run."""
-        hf_runs, paths_by_batch = multi_run_setup
+        hf_runs, root, paths_by_batch = multi_run_setup
         filtered = hf_runs.batch(8)
         assert len(filtered) == 1
 
         with patch(
             "mlenergy_data.records.runs.download_file",
-            side_effect=self._mock_download(paths_by_batch),
+            side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             filtered.output_lengths()
             downloaded = {call.args[1] for call in mock.call_args_list}
-            assert paths_by_batch[8] in downloaded
-            assert paths_by_batch[16] not in downloaded
-            assert paths_by_batch[32] not in downloaded
+            assert self._rel(root, paths_by_batch[8]) in downloaded
+            assert self._rel(root, paths_by_batch[16]) not in downloaded
+            assert self._rel(root, paths_by_batch[32]) not in downloaded
 
     def test_unfiltered_downloads_all_files(
         self,
-        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+        multi_run_setup: tuple[LLMRuns, Path, dict[int, str]],
     ) -> None:
         """The full collection should download files for all 3 runs."""
-        hf_runs, paths_by_batch = multi_run_setup
+        hf_runs, root, paths_by_batch = multi_run_setup
 
         with patch(
             "mlenergy_data.records.runs.download_file",
-            side_effect=self._mock_download(paths_by_batch),
+            side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             hf_runs.output_lengths()
             downloaded = {call.args[1] for call in mock.call_args_list}
             for batch, path in paths_by_batch.items():
-                assert path in downloaded, f"batch={batch} file not downloaded"
+                assert self._rel(root, path) in downloaded, f"batch={batch} file not downloaded"
 
     def test_chained_filter_narrows_downloads(self, tmp_path: Path) -> None:
         """Chaining .task().batch() should narrow downloads to the intersection."""
         root = tmp_path / "bench"
         cfg_root = tmp_path / "cfg"
-        # Two tasks x two batch sizes = 4 runs
         _make_benchmark_fixture(root, cfg_root, task="gpqa", max_num_seqs=16, seed=1)
         _make_benchmark_fixture(root, cfg_root, task="gpqa", max_num_seqs=32, seed=2)
         _make_benchmark_fixture(root, cfg_root, task="lm-arena-chat", max_num_seqs=16, seed=3)
@@ -552,21 +563,14 @@ class TestSelectiveDownload:
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         assert len(runs) == 4
 
-        source = _HFSource(repo_id="test/repo", revision=None, cache_dir=None)
+        source = _make_hf_source(root)
         hf_runs = LLMRuns(list(runs), _hf_source=source)
 
-        # Index by (task, batch) for clear assertions
         path_index = {(r.task, r.max_num_seqs): r.results_path for r in runs}
-        all_paths = set(path_index.values())
-        prom_paths = {p.replace("results.json", "prometheus.json") for p in all_paths}
-        known = all_paths | prom_paths
 
-        def _side_effect(repo_id: str, filename: str, **kwargs: object) -> str:
-            if filename in known:
-                return filename
-            raise FileNotFoundError(f"mock: unknown file {filename}")
+        def _side_effect(repo_id: str, filename: str, **kwargs: object) -> Path:
+            return root / filename
 
-        # Filter to gpqa + batch=16: should be exactly 1 run
         filtered = hf_runs.task("gpqa").batch(16)
         assert len(filtered) == 1
 
@@ -576,64 +580,180 @@ class TestSelectiveDownload:
         ) as mock:
             filtered.output_lengths()
             downloaded = {call.args[1] for call in mock.call_args_list}
-            assert path_index[("gpqa", 16)] in downloaded
-            assert path_index[("gpqa", 32)] not in downloaded
-            assert path_index[("lm-arena-chat", 16)] not in downloaded
-            assert path_index[("lm-arena-chat", 32)] not in downloaded
+            assert self._rel(root, path_index[("gpqa", 16)]) in downloaded
+            assert self._rel(root, path_index[("gpqa", 32)]) not in downloaded
+            assert self._rel(root, path_index[("lm-arena-chat", 16)]) not in downloaded
+            assert self._rel(root, path_index[("lm-arena-chat", 32)]) not in downloaded
 
     def test_timelines_uses_selective_download(
         self,
-        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+        multi_run_setup: tuple[LLMRuns, Path, dict[int, str]],
     ) -> None:
         """timelines() on a filtered collection should also scope downloads."""
-        hf_runs, paths_by_batch = multi_run_setup
+        hf_runs, root, paths_by_batch = multi_run_setup
         filtered = hf_runs.batch(32)
         assert len(filtered) == 1
 
         with patch(
             "mlenergy_data.records.runs.download_file",
-            side_effect=self._mock_download(paths_by_batch),
+            side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             with contextlib.suppress(Exception):
                 filtered.timelines(metric="power.device_instant")
             downloaded = {call.args[1] for call in mock.call_args_list}
-            assert paths_by_batch[32] in downloaded
-            assert paths_by_batch[8] not in downloaded
-            assert paths_by_batch[16] not in downloaded
+            assert self._rel(root, paths_by_batch[32]) in downloaded
+            assert self._rel(root, paths_by_batch[8]) not in downloaded
+            assert self._rel(root, paths_by_batch[16]) not in downloaded
 
     def test_prefetch_downloads_current_scope(
         self,
-        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+        multi_run_setup: tuple[LLMRuns, Path, dict[int, str]],
     ) -> None:
         """prefetch() on a filtered collection only downloads that subset."""
-        hf_runs, paths_by_batch = multi_run_setup
+        hf_runs, root, paths_by_batch = multi_run_setup
         filtered = hf_runs.batch(8, 16)
         assert len(filtered) == 2
 
         with patch(
             "mlenergy_data.records.runs.download_file",
-            side_effect=self._mock_download(paths_by_batch),
+            side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             filtered.prefetch()
             downloaded = {call.args[1] for call in mock.call_args_list}
-            assert paths_by_batch[8] in downloaded
-            assert paths_by_batch[16] in downloaded
-            assert paths_by_batch[32] not in downloaded
+            assert self._rel(root, paths_by_batch[8]) in downloaded
+            assert self._rel(root, paths_by_batch[16]) in downloaded
+            assert self._rel(root, paths_by_batch[32]) not in downloaded
 
     def test_cache_prevents_repeated_downloads(
         self,
-        multi_run_setup: tuple[LLMRuns, dict[int, str]],
+        multi_run_setup: tuple[LLMRuns, Path, dict[int, str]],
     ) -> None:
         """Second call to output_lengths() should not re-download."""
-        hf_runs, paths_by_batch = multi_run_setup
+        hf_runs, root, paths_by_batch = multi_run_setup
         filtered = hf_runs.batch(8)
 
         with patch(
             "mlenergy_data.records.runs.download_file",
-            side_effect=self._mock_download(paths_by_batch),
+            side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             filtered.output_lengths()
             first_count = mock.call_count
             assert first_count >= 1
             filtered.output_lengths()
             assert mock.call_count == first_count
+
+
+class TestDataPathDownloadTrigger:
+    """Test that data.results_path and data.prometheus_path trigger download."""
+
+    def test_data_results_path_triggers_download(self, tmp_path: Path) -> None:
+        """Accessing data.results_path should trigger _ensure_raw_files."""
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        source = _make_hf_source(root)
+        hf_runs = LLMRuns(list(runs), _hf_source=source)
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            return_value=Path(runs[0].results_path),
+        ) as mock:
+            _ = hf_runs.data.results_path
+            assert mock.call_count >= 1
+
+    def test_data_prometheus_path_triggers_download(self, tmp_path: Path) -> None:
+        """Accessing data.prometheus_path should trigger _ensure_raw_files."""
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        source = _make_hf_source(root)
+        hf_runs = LLMRuns(list(runs), _hf_source=source)
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            return_value=Path(runs[0].results_path),
+        ) as mock:
+            _ = hf_runs.data.prometheus_path
+            assert mock.call_count >= 1
+
+    def test_iteration_does_not_trigger_download(self, tmp_path: Path) -> None:
+        """Iterating over runs should NOT trigger download_file."""
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        source = _make_hf_source(root)
+        hf_runs = LLMRuns(list(runs), _hf_source=source)
+
+        with patch("mlenergy_data.records.runs.download_file") as mock:
+            for r in hf_runs:
+                _ = r.task
+            _ = hf_runs[0]
+            _ = len(hf_runs)
+            assert mock.call_count == 0
+
+    def test_non_path_data_fields_no_download(self, tmp_path: Path) -> None:
+        """Accessing data.num_gpus or data.task should NOT trigger download."""
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        source = _make_hf_source(root)
+        hf_runs = LLMRuns(list(runs), _hf_source=source)
+
+        with patch("mlenergy_data.records.runs.download_file") as mock:
+            _ = hf_runs.data.num_gpus
+            _ = hf_runs.data.task
+            _ = hf_runs.data.energy_per_token_joules
+            assert mock.call_count == 0
+
+
+class TestInterTokenLatencies:
+    """Test the inter_token_latencies() method."""
+
+    def test_basic(self, tmp_path: Path) -> None:
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        df = runs.inter_token_latencies()
+        assert len(df) > 0
+        assert set(df.columns) == {
+            "results_path",
+            "task",
+            "model_id",
+            "num_gpus",
+            "max_num_seqs",
+            "itl_s",
+        }
+        assert all(v > 0 for v in df["itl_s"])
+
+    def test_empty_runs(self) -> None:
+        runs = LLMRuns([])
+        df = runs.inter_token_latencies()
+        assert len(df) == 0
+
+    def test_hf_triggers_download(self, tmp_path: Path) -> None:
+        """inter_token_latencies() should trigger download for HF-sourced data."""
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        source = _make_hf_source(root)
+        hf_runs = LLMRuns(list(runs), _hf_source=source)
+
+        with patch(
+            "mlenergy_data.records.runs.download_file",
+            return_value=Path(runs[0].results_path),
+        ) as mock:
+            df = hf_runs.inter_token_latencies()
+            assert len(df) > 0
+            assert mock.call_count >= 1

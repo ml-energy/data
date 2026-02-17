@@ -162,23 +162,21 @@ When loaded from HF Hub (`from_hf()`), they automatically download only the raw 
 
 To eagerly download all raw files upfront, use `prefetch()`:
 
-```python {test="skip"}
+```python {test="skip-bulk"}
 # Eagerly download all raw files for a filtered collection
-runs = LLMRuns.from_hf().task("gpqa").prefetch()
+runs = LLMRuns.from_hf().task("lm-arena-chat").gpu("H100").prefetch()
 power_tl = runs.timelines(metric="power.device_instant")  # no download delay
 ```
 
 ```python {test="skip"}
 # Power timelines (long-form)
 power_tl = runs.timelines(metric="power.device_instant")
-# Columns: results_path, domain, task, model_id, num_gpus, max_num_seqs, batch_size, timestamp, relative_time_s, value, metric
 
 # Temperature timelines
 temp_tl = runs.timelines(metric="temperature")
 
 # Output lengths
 out_df = runs.output_lengths()
-# Columns: results_path, task, model_id, num_gpus, max_num_seqs, output_len, success
 
 # Full DataFrame (one row per run, all fields as columns)
 df = runs.to_dataframe()

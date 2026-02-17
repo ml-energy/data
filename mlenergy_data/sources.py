@@ -61,15 +61,15 @@ def download_file(
     filename: str,
     *,
     revision: str | None = None,
-    cache_dir: str | Path | None = None,
 ) -> Path:
     """Download a single file from a HF dataset repo.
+
+    Respects the ``HF_HOME`` environment variable for cache location.
 
     Args:
         repo_id: HF dataset repository ID.
         filename: Path of the file within the repo.
         revision: Git revision (branch, tag, or commit hash).
-        cache_dir: Local cache directory for downloads.
 
     Returns:
         Local path to the downloaded file.
@@ -79,7 +79,6 @@ def download_file(
         filename=filename,
         repo_type="dataset",
         revision=revision,
-        cache_dir=(str(cache_dir) if cache_dir is not None else None),
     )
     return Path(local)
 

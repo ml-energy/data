@@ -33,7 +33,7 @@ class _HFSource:
 
     repo_id: str
     revision: str | None
-    cache_dir: Path | None
+    snapshot_root: Path
 
 
 @dataclass(frozen=True)
@@ -1001,11 +1001,35 @@ class _LLMRunsData:
     inside the `if TYPE_CHECKING` block below to keep types in sync.
     """
 
-    __slots__ = ("_cache", "_runs")
+    __slots__ = ("_cache", "_ensure_raw", "_runs")
 
-    def __init__(self, runs: tuple[LLMRun, ...], cache: dict[str, Any]) -> None:
-        object.__setattr__(self, "_runs", runs)
-        object.__setattr__(self, "_cache", cache)
+    def __init__(
+        self,
+        runs: tuple[LLMRun, ...],
+        cache: dict[str, Any],
+        ensure_raw: Callable[[], None],
+    ) -> None:
+        self._runs = runs
+        self._cache = cache
+        self._ensure_raw = ensure_raw
+
+    @property
+    def results_path(self) -> list[str]:
+        """Path to the raw results.json file. Triggers download if needed."""
+        self._ensure_raw()
+        key = "_data_results_path"
+        if key not in self._cache:
+            self._cache[key] = [r.results_path for r in self._runs]
+        return self._cache[key]
+
+    @property
+    def prometheus_path(self) -> list[str]:
+        """Path to the prometheus.json file. Triggers download if needed."""
+        self._ensure_raw()
+        key = "_data_prometheus_path"
+        if key not in self._cache:
+            self._cache[key] = [r.prometheus_path for r in self._runs]
+        return self._cache[key]
 
     if not TYPE_CHECKING:
 
@@ -1194,16 +1218,6 @@ class _LLMRunsData:
             """Reason for instability."""
             ...
 
-        @property
-        def results_path(self) -> list[str]:
-            """Path to the raw results.json file."""
-            ...
-
-        @property
-        def prometheus_path(self) -> list[str]:
-            """Path to the prometheus.json file."""
-            ...
-
 
 class _DiffusionRunsData:
     """Typed field accessor for DiffusionRuns, returning `list[T]` per field.
@@ -1215,11 +1229,26 @@ class _DiffusionRunsData:
     inside the `if TYPE_CHECKING` block below to keep types in sync.
     """
 
-    __slots__ = ("_cache", "_runs")
+    __slots__ = ("_cache", "_ensure_raw", "_runs")
 
-    def __init__(self, runs: tuple[DiffusionRun, ...], cache: dict[str, Any]) -> None:
-        object.__setattr__(self, "_runs", runs)
-        object.__setattr__(self, "_cache", cache)
+    def __init__(
+        self,
+        runs: tuple[DiffusionRun, ...],
+        cache: dict[str, Any],
+        ensure_raw: Callable[[], None],
+    ) -> None:
+        self._runs = runs
+        self._cache = cache
+        self._ensure_raw = ensure_raw
+
+    @property
+    def results_path(self) -> list[str]:
+        """Path to the raw results.json file. Triggers download if needed."""
+        self._ensure_raw()
+        key = "_data_results_path"
+        if key not in self._cache:
+            self._cache[key] = [r.results_path for r in self._runs]
+        return self._cache[key]
 
     if not TYPE_CHECKING:
 
@@ -1343,11 +1372,6 @@ class _DiffusionRunsData:
             """Throughput in generations per second."""
             ...
 
-        @property
-        def results_path(self) -> list[str]:
-            """Path to the raw results.json file."""
-            ...
-
 
 class LLMRuns:
     """Immutable collection of LLM benchmark runs with fluent filtering.
@@ -1390,59 +1414,51 @@ class LLMRuns:
         """Create a derived collection preserving source metadata."""
         return LLMRuns(runs, _hf_source=self._hf_source, _stable_only=self._stable_only)
 
-    def _ensure_raw_files(self) -> dict[str, str]:
+    def _ensure_raw_files(self) -> None:
         """Ensure raw results files are available locally.
 
         When the collection was loaded from HF Hub, downloads the raw
-        files for all runs in this collection in parallel. Returns a
-        mapping from original path to resolved local path.
+        files for all runs in this collection in parallel. Paths on
+        each run record are already absolute (resolved at load time),
+        so this only triggers the actual download.
 
         Files already present in the HF Hub local cache (from previous
         downloads, even across processes) are resolved instantly without
         network I/O.
-
-        Returns empty dict if data is already local.
         """
-        cache_key = "_raw_files"
-        if cache_key in self._cache:
-            return self._cache[cache_key]
+        if "_raw_files" in self._cache or self._hf_source is None:
+            return
 
-        if self._hf_source is None:
-            self._cache[cache_key] = {}
-            return {}
-
+        root = self._hf_source.snapshot_root
         files: set[str] = set()
         for run in self._runs:
-            files.add(run.results_path)
+            files.add(str(Path(run.results_path).relative_to(root)))
             if run.prometheus_path:
-                files.add(run.prometheus_path)
+                files.add(str(Path(run.prometheus_path).relative_to(root)))
 
         if not files:
-            self._cache[cache_key] = {}
-            return {}
+            self._cache["_raw_files"] = True
+            return
 
         logger.info(
-            "Resolving %d raw files from %s",
+            "Downloading %d raw files from %s",
             len(files),
             self._hf_source.repo_id,
         )
-        path_map: dict[str, str] = {}
         with ThreadPoolExecutor(max_workers=min(8, len(files))) as pool:
-            futures = {
-                f: pool.submit(
+            futures = [
+                pool.submit(
                     download_file,
                     self._hf_source.repo_id,
                     f,
                     revision=self._hf_source.revision,
-                    cache_dir=self._hf_source.cache_dir,
                 )
                 for f in files
-            }
-            for f, future in futures.items():
-                path_map[f] = str(future.result())
+            ]
+            for future in futures:
+                future.result()
 
-        self._cache[cache_key] = path_map
-        return path_map
+        self._cache["_raw_files"] = True
 
     def prefetch(self) -> LLMRuns:
         """Eagerly download all raw files for this collection.
@@ -1486,30 +1502,26 @@ class LLMRuns:
         repo_id: str = "ml-energy/benchmark-v3",
         *,
         revision: str | None = None,
-        cache_dir: str | Path | None = None,
         stable_only: bool = True,
     ) -> LLMRuns:
         """Load LLM runs from a Hugging Face dataset repository.
 
         Downloads only the parquet summary file (~few MB). Methods that
-        need raw data (output_lengths(), timelines()) will automatically
-        download the required files on first access.
+        need raw data (output_lengths(), timelines(), inter_token_latencies())
+        will automatically download the required files on first access.
+
+        Respects the ``HF_HOME`` environment variable for cache location.
 
         Args:
             repo_id: HF dataset repository ID.
             revision: Git revision (branch, tag, or commit hash).
-            cache_dir: Local cache directory for downloads.
             stable_only: If True (default), only return stable runs.
                 See from_raw_results for the definition of stability.
         """
-        source = _HFSource(repo_id, revision, Path(cache_dir) if cache_dir else None)
-        parquet_path = download_file(
-            repo_id,
-            "runs/llm.parquet",
-            revision=revision,
-            cache_dir=cache_dir,
-        )
-        instance = cls.from_parquet(parquet_path, stable_only=stable_only)
+        parquet_path = download_file(repo_id, "runs/llm.parquet", revision=revision)
+        snapshot_root = parquet_path.parent.parent
+        source = _HFSource(repo_id, revision, snapshot_root)
+        instance = cls.from_parquet(parquet_path, base_dir=snapshot_root, stable_only=stable_only)
         instance._hf_source = source
         return instance
 
@@ -1728,7 +1740,7 @@ class LLMRuns:
         """
         key = "_data_accessor"
         if key not in self._cache:
-            self._cache[key] = _LLMRunsData(self._runs, self._cache)
+            self._cache[key] = _LLMRunsData(self._runs, self._cache, self._ensure_raw_files)
         return self._cache[key]
 
     def group_by(self, *fields: str) -> dict[Any, LLMRuns]:
@@ -1814,11 +1826,10 @@ class LLMRuns:
         if not self._runs:
             return pd.DataFrame(columns=cols)
 
-        path_map = self._ensure_raw_files()
+        self._ensure_raw_files()
         rows: list[dict[str, Any]] = []
         for run in self._runs:
-            resolved = path_map.get(run.results_path, run.results_path)
-            p = Path(resolved)
+            p = Path(run.results_path)
             if not p.exists():
                 raise FileNotFoundError(f"Raw results file not found: {p}")
             data = _load_json(p)
@@ -1849,6 +1860,57 @@ class LLMRuns:
                 )
         return pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
 
+    def inter_token_latencies(self) -> pd.DataFrame:
+        """Extract per-token inter-token latency samples.
+
+        Reads raw results files and extracts ITL values from each successful
+        request. Chunked-prefill artifacts (zero-valued ITL entries) are
+        smoothed by spreading the accumulated latency across the covered tokens.
+
+        When loaded from HF Hub, automatically downloads the raw files
+        needed for the current (possibly filtered) collection.
+
+        Returns:
+            DataFrame with columns: results_path, task, model_id,
+            num_gpus, max_num_seqs, itl_s
+
+        Raises:
+            FileNotFoundError: If raw results files are not available locally
+                and the collection was not loaded from HF Hub.
+        """
+        cols = ["results_path", "task", "model_id", "num_gpus", "max_num_seqs", "itl_s"]
+        if not self._runs:
+            return pd.DataFrame(columns=cols)
+
+        self._ensure_raw_files()
+        rows: list[dict[str, Any]] = []
+        for run in self._runs:
+            p = Path(run.results_path)
+            if not p.exists():
+                raise FileNotFoundError(f"Raw results file not found: {p}")
+            data = _load_json(p)
+            vals: list[float] = []
+            for req in data.get("results", []):
+                if not req.get("success", False):
+                    continue
+                raw_itl = [float(x) for x in req.get("itl", [])]
+                vals.extend(_smooth_chunked_itl(raw_itl))
+            arr = [x for x in vals if x > 0 and np.isfinite(x)]
+            if not arr:
+                raise ValueError(f"No valid ITL samples in run: {run.results_path}")
+            for v in arr:
+                rows.append(
+                    {
+                        "results_path": run.results_path,
+                        "task": run.task,
+                        "model_id": run.model_id,
+                        "num_gpus": run.num_gpus,
+                        "max_num_seqs": run.max_num_seqs,
+                        "itl_s": v,
+                    }
+                )
+        return pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
+
     def timelines(self, *, metric: str = "power.device_instant") -> pd.DataFrame:
         """Extract power/temperature timeseries.
 
@@ -1865,11 +1927,10 @@ class LLMRuns:
             num_gpus, max_num_seqs, batch_size, timestamp,
             relative_time_s, value, metric
         """
-        path_map = self._ensure_raw_files()
+        self._ensure_raw_files()
         records = [
             {
                 "results_path": r.results_path,
-                "resolved_path": path_map.get(r.results_path, r.results_path),
                 "domain": r.domain,
                 "task": r.task,
                 "model_id": r.model_id,
@@ -1924,57 +1985,49 @@ class DiffusionRuns:
         """Create a derived collection preserving source metadata."""
         return DiffusionRuns(runs, _hf_source=self._hf_source)
 
-    def _ensure_raw_files(self) -> dict[str, str]:
+    def _ensure_raw_files(self) -> None:
         """Ensure raw results files are available locally.
 
         When the collection was loaded from HF Hub, downloads the raw
-        files for all runs in this collection in parallel. Returns a
-        mapping from original path to resolved local path.
+        files for all runs in this collection in parallel. Paths on
+        each run record are already absolute (resolved at load time),
+        so this only triggers the actual download.
 
         Files already present in the HF Hub local cache (from previous
         downloads, even across processes) are resolved instantly without
         network I/O.
-
-        Returns empty dict if data is already local.
         """
-        cache_key = "_raw_files"
-        if cache_key in self._cache:
-            return self._cache[cache_key]
+        if "_raw_files" in self._cache or self._hf_source is None:
+            return
 
-        if self._hf_source is None:
-            self._cache[cache_key] = {}
-            return {}
-
+        root = self._hf_source.snapshot_root
         files: set[str] = set()
         for run in self._runs:
-            files.add(run.results_path)
+            files.add(str(Path(run.results_path).relative_to(root)))
 
         if not files:
-            self._cache[cache_key] = {}
-            return {}
+            self._cache["_raw_files"] = True
+            return
 
         logger.info(
-            "Resolving %d raw files from %s",
+            "Downloading %d raw files from %s",
             len(files),
             self._hf_source.repo_id,
         )
-        path_map: dict[str, str] = {}
         with ThreadPoolExecutor(max_workers=min(8, len(files))) as pool:
-            futures = {
-                f: pool.submit(
+            futures = [
+                pool.submit(
                     download_file,
                     self._hf_source.repo_id,
                     f,
                     revision=self._hf_source.revision,
-                    cache_dir=self._hf_source.cache_dir,
                 )
                 for f in files
-            }
-            for f, future in futures.items():
-                path_map[f] = str(future.result())
+            ]
+            for future in futures:
+                future.result()
 
-        self._cache[cache_key] = path_map
-        return path_map
+        self._cache["_raw_files"] = True
 
     def prefetch(self) -> DiffusionRuns:
         """Eagerly download all raw files for this collection.
@@ -2014,7 +2067,6 @@ class DiffusionRuns:
         repo_id: str = "ml-energy/benchmark-v3",
         *,
         revision: str | None = None,
-        cache_dir: str | Path | None = None,
     ) -> DiffusionRuns:
         """Load diffusion runs from a Hugging Face dataset repository.
 
@@ -2022,19 +2074,16 @@ class DiffusionRuns:
         need raw data (timelines()) will automatically download the
         required files on first access.
 
+        Respects the ``HF_HOME`` environment variable for cache location.
+
         Args:
             repo_id: HF dataset repository ID.
             revision: Git revision (branch, tag, or commit hash).
-            cache_dir: Local cache directory for downloads.
         """
-        source = _HFSource(repo_id, revision, Path(cache_dir) if cache_dir else None)
-        parquet_path = download_file(
-            repo_id,
-            "runs/diffusion.parquet",
-            revision=revision,
-            cache_dir=cache_dir,
-        )
-        instance = cls.from_parquet(parquet_path)
+        parquet_path = download_file(repo_id, "runs/diffusion.parquet", revision=revision)
+        snapshot_root = parquet_path.parent.parent
+        source = _HFSource(repo_id, revision, snapshot_root)
+        instance = cls.from_parquet(parquet_path, base_dir=snapshot_root)
         instance._hf_source = source
         return instance
 
@@ -2202,7 +2251,7 @@ class DiffusionRuns:
         """
         key = "_data_accessor"
         if key not in self._cache:
-            self._cache[key] = _DiffusionRunsData(self._runs, self._cache)
+            self._cache[key] = _DiffusionRunsData(self._runs, self._cache, self._ensure_raw_files)
         return self._cache[key]
 
     def group_by(self, *fields: str) -> dict[Any, DiffusionRuns]:
@@ -2268,11 +2317,10 @@ class DiffusionRuns:
             num_gpus, max_num_seqs, batch_size, timestamp,
             relative_time_s, value, metric
         """
-        path_map = self._ensure_raw_files()
+        self._ensure_raw_files()
         records = [
             {
                 "results_path": r.results_path,
-                "resolved_path": path_map.get(r.results_path, r.results_path),
                 "domain": r.domain,
                 "task": r.task,
                 "model_id": r.model_id,

@@ -67,7 +67,7 @@ def test_docs(example: CodeExample, eval_example: EvalExample, request) -> None:
     if test_mode == "skip":
         pytest.skip('test="skip" in code fence')
     if test_mode == "skip-bulk" and not request.config.getoption("--run-bulk"):
-        pytest.skip("needs --run-bulk")
+        pytest.skip('test="skip-bulk" in code fence, pass --run-bulk to run')
 
     ns = eval_example.run(example, module_globals=dict(_file_ns[path]))
     _file_ns[path].update(ns)

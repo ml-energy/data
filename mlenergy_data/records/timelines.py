@@ -187,7 +187,7 @@ def load_timeline_table(
     logger.info("Extracting timelines (metric=%s) for %d runs", metric, len(rec_list))
     rows: list[pd.DataFrame] = []
     for rec in rec_list:
-        p = Path(str(rec.get("resolved_path", rec["results_path"])))
+        p = Path(str(rec["results_path"]))
         payload = json.loads(p.read_text())
         if metric == "power.device_instant":
             wide = extract_power_device_instant(payload)
