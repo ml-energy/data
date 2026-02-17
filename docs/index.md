@@ -55,6 +55,8 @@ for arch, group in runs.task("gpqa").gpu("B200").group_by("architecture").items(
 - [**OpenG2G**](TODO): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
 - [**The ML.ENERGY blog**](https://ml.energy/blog): Analysis scripts for blog posts.
 
+See the [Guide](guide.md) page for more details, together with a progressive walkthrough.
+
 ## Next Steps
 
 - [Guide](guide.md): Progressive walkthrough from loading data to fitting models.

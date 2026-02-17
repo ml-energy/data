@@ -7,7 +7,7 @@ For full working examples of the toolkit in production, see:
 | Project | Description | Script |
 |---------|-------------|-------|
 | [The ML.ENERGY Leaderboard](https://ml.energy/leaderboard) | Builds the leaderboard JSON data from benchmark runs | [Link](https://github.com/ml-energy/leaderboard/blob/main/scripts/build_data.py) |
-| [The ML.ENERGY Blog](https://ml.energy/blog/measurement/energy/diagnosing-inference-energy-consumption-with-the-mlenergy-leaderboard-v30/) | Analysis for the blog post on the V3 benchmark results | [Link](TODO) |
+| [The ML.ENERGY Blog](https://ml.energy/blog/measurement/energy/diagnosing-inference-energy-consumption-with-the-mlenergy-leaderboard-v30/) | Analysis for the blog post on the V3 benchmark results | [Link](https://github.com/ml-energy/blog/blob/2a60279745acb0f6c4693a9a70a8b61d19775e9a/analysis/ml-energy-leaderboard-v3.0.py) |
 | [OpenG2G Simulation](TODO) | Power traces and models for datacenter–grid simulation | [Link](TODO) |
 
 
