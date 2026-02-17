@@ -30,7 +30,6 @@ theme:
     - announce.dismiss
 
 nav:
-  - The ML.ENERGY Data & Toolkit: index.md
   - Toolkit Guide: guide.md
   - API Reference:
       - Records: api/records.md
