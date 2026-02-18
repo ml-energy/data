@@ -9,9 +9,8 @@ Actual data are stored in Hugging Face Hub: [`ml-energy/benchmark-v3`](https://h
 ## What the Toolkit Does
 
 - **Load and filter benchmark runs** with typed, immutable collection classes (`LLMRuns`, `DiffusionRuns`).
-- **Extract bulk data** — power timelines, ITL samples, output lengths — as DataFrames.
-- **Fit models** — logistic power/latency curves, ITL latency distributions.
-- **Build data packages** for publishing to Hugging Face Hub.
+- **Extract bulk per-request detailed data** (e.g., power timelines, ITL samples, output lengths) as DataFrames.
+- **Fit models**: logistic power/latency curves and ITL latency distributions.
 
 ## Installation
 
