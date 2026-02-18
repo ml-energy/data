@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -13,45 +12,13 @@ from huggingface_hub.errors import GatedRepoError, RepositoryNotFoundError
 
 logger = logging.getLogger(__name__)
 
-
-def _handle_hf_access_error(exc: RepositoryNotFoundError, repo_id: str) -> None:
-    """Re-raise HF Hub access errors with actionable guidance.
-
-    Args:
-        exc: The original exception from `huggingface_hub`.
-        repo_id: The HF dataset repository ID that was being accessed.
-
-    Raises:
-        GatedRepoError: With instructions to request access on the dataset page.
-        RepositoryNotFoundError: With instructions to set `HF_TOKEN`.
-    """
-    dataset_url = f"https://huggingface.co/datasets/{repo_id}"
-    if isinstance(exc, GatedRepoError):
-        raise GatedRepoError(
-            f"Access denied to gated dataset '{repo_id}'.\n"
-            f"Your Hugging Face token was recognized, but you have not been "
-            f"granted access to this dataset.\n"
-            f"Visit {dataset_url} and request access, then retry.",
-            response=exc.response,
-        ) from None
-    has_token = bool(os.environ.get("HF_TOKEN"))
-    if has_token:
-        raise RepositoryNotFoundError(
-            f"Could not access dataset '{repo_id}' (HTTP {exc.response.status_code}).\n"
-            f"Your HF_TOKEN is set but the request was rejected. "
-            f"Check that your token is valid and that you have been granted "
-            f"access at {dataset_url}.",
-            response=exc.response,
-        ) from None
-    raise RepositoryNotFoundError(
-        f"Could not access dataset '{repo_id}' (HTTP {exc.response.status_code}).\n"
-        f"This is a gated dataset that requires authentication.\n"
-        f"1. Set the HF_TOKEN environment variable to a Hugging Face access token.\n"
-        f"   (Create one at https://huggingface.co/settings/tokens)\n"
-        f"2. Visit {dataset_url} and request access.\n"
-        f"3. Retry after access is granted.",
-        response=exc.response,
-    ) from None
+_GATED_DATASET_MSG = (
+    "Failed to download dataset '{repo_id}'. "
+    "This is a gated dataset. Please ensure you have done the following:\n"
+    "1. Visit https://huggingface.co/datasets/{repo_id} and request access.\n"
+    "2. Set the HF_TOKEN environment variable to a Hugging Face access token.\n"
+    "   (Create one at https://huggingface.co/settings/tokens)"
+)
 
 
 class DatasetSource(Protocol):
@@ -96,8 +63,8 @@ class HFDatasetSource:
                 cache_dir=(str(self.cache_dir) if self.cache_dir is not None else None),
                 allow_patterns=self.allow_patterns,
             )
-        except RepositoryNotFoundError as e:
-            _handle_hf_access_error(e, self.repo_id)
+        except (GatedRepoError, RepositoryNotFoundError) as e:
+            raise RuntimeError(_GATED_DATASET_MSG.format(repo_id=self.repo_id)) from e
         return Path(local)
 
 
@@ -126,8 +93,8 @@ def download_file(
             repo_type="dataset",
             revision=revision,
         )
-    except RepositoryNotFoundError as e:
-        _handle_hf_access_error(e, repo_id)
+    except (GatedRepoError, RepositoryNotFoundError) as e:
+        raise RuntimeError(_GATED_DATASET_MSG.format(repo_id=repo_id)) from e
     return Path(local)
 
 
