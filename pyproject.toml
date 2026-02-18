@@ -6,8 +6,20 @@ build-backend = "setuptools.build_meta"
 name = "mlenergy-data"
 dynamic = ["version"]
 description = "ML.ENERGY Benchmark data toolkit"
+readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
+authors = [
+    {name = "Jae-Won Chung", email = "jwnchung@umich.edu"},
+]
+keywords = ["machine-learning", "energy", "benchmark", "gpu"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "numpy",
     "pandas",
@@ -15,6 +27,12 @@ dependencies = [
     "huggingface_hub",
     "pyarrow",
 ]
+
+[project.urls]
+Homepage = "https://ml.energy/data"
+Documentation = "https://ml.energy/data"
+Repository = "https://github.com/ml-energy/data"
+Issues = "https://github.com/ml-energy/data/issues"
 
 [dependency-groups]
 test = ["pytest", "pytest-examples", "matplotlib"]
