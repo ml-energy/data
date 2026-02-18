@@ -22,12 +22,12 @@ from mlenergy_data.records import LLMRuns, DiffusionRuns
 # Load (fast, parquet only ~few MB)
 runs = LLMRuns.from_hf()
 
-# Find the most energy-efficient model on GPQA
-best = min(runs.task("gpqa"), key=lambda r: r.energy_per_token_joules)
+# Find the minimum-energy model on GPQA
+gpqa_runs = runs.task("gpqa")
+best = min(gpqa_runs, key=lambda r: r.energy_per_token_joules)
 print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok on {best.gpu_model}")
 
-# Column access via .data
-energies = runs.data.energy_per_token_joules  # list[float]
+energies = [r.energy_per_token_joules for r in runs]
 ```
 
 Filter, group, and compare across GPU generations and model architectures:
@@ -40,7 +40,7 @@ for gpu, group in runs.task("gpqa").group_by("gpu_model").items():
           f"{best.output_throughput_tokens_per_sec:.0f} tok/s")
 
 # MoE, Dense, Hybrid: who's more energy-efficient?
-for arch, group in runs.task("gpqa").gpu("B200").group_by("architecture").items():
+for arch, group in runs.task("gpqa").gpu_model("B200").group_by("architecture").items():
     best = min(group, key=lambda r: r.energy_per_token_joules)
     print(f"{arch}: {best.nickname} @ {best.energy_per_token_joules:.3f} J/tok")
 ```

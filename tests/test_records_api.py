@@ -4,10 +4,7 @@ import json
 from pathlib import Path
 
 from mlenergy_data.records.runs import LLMRuns
-from mlenergy_data.records.timelines import (
-    extract_power_device_instant,
-    extract_temperature_timeseries,
-)
+from mlenergy_data.records.timelines import extract_device_timeline
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:
@@ -99,22 +96,32 @@ def test_extract_power_timeline_with_ffill() -> None:
                 },
             },
             "temperature": {
-                "device_instant": {
-                    "0": [[10.0, 60.0], [11.0, 61.0], [12.0, 62.0]],
-                    "1": [[10.0, 65.0], [11.0, 66.0], [12.0, 67.0]],
-                }
+                "0": [[10.0, 60.0], [11.0, 61.0], [12.0, 62.0]],
+                "1": [[10.0, 65.0], [11.0, 66.0], [12.0, 67.0]],
             },
         }
     }
 
-    df = extract_power_device_instant(results)
+    power_series = results["timeline"]["power"]["device_instant"]
+    df = extract_device_timeline(
+        power_series,
+        label="power_device_instant",
+        steady_state_start=10.0,
+        steady_state_end=12.0,
+    )
     assert list(df["relative_time_s"]) == [0.0, 1.0, 2.0]
     # GPU1 missing at t=11 should be ffilled from 200.
     assert float(df.loc[1, "power_device_instant_device_1"]) == 200.0
     assert float(df.loc[1, "power_device_instant_total"]) == 310.0
 
-    tdf = extract_temperature_timeseries(results)
-    assert "temperature_device_instant_total" in tdf.columns
+    temp_series = results["timeline"]["temperature"]
+    tdf = extract_device_timeline(
+        temp_series,
+        label="temperature",
+        steady_state_start=10.0,
+        steady_state_end=12.0,
+    )
+    assert "temperature_total" in tdf.columns
 
 
 def test_llm_runsfrom_raw_results(tmp_path: Path) -> None:
@@ -140,24 +147,24 @@ def test_llm_runs_filtering(tmp_path: Path) -> None:
     runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
     assert len(runs) == 2
 
-    batch16 = runs.batch(16)
+    batch16 = runs.max_num_seqs(16)
     assert len(batch16) == 1
     assert batch16[0].max_num_seqs == 16
 
-    batch32 = runs.batch(32)
+    batch32 = runs.max_num_seqs(32)
     assert len(batch32) == 1
     assert batch32[0].max_num_seqs == 32
 
-    both = runs.batch(16, 32)
+    both = runs.max_num_seqs(16, 32)
     assert len(both) == 2
 
-    gpu_filter = runs.gpu("H100")
+    gpu_filter = runs.gpu_model("H100")
     assert len(gpu_filter) == 2
 
     task_filter = runs.task("gpqa")
     assert len(task_filter) == 2
 
-    model_filter = runs.model("org/model")
+    model_filter = runs.model_id("org/model")
     assert len(model_filter) == 2
 
 
@@ -168,7 +175,7 @@ def test_llm_runs_chaining(tmp_path: Path) -> None:
     _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=2)
 
     runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-    chained = runs.task("gpqa").gpu("H100").batch(16)
+    chained = runs.task("gpqa").gpu_model("H100").max_num_seqs(16)
     assert len(chained) == 1
     assert chained[0].max_num_seqs == 16
 
@@ -180,11 +187,11 @@ def test_llm_runs_field_access(tmp_path: Path) -> None:
     _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=2)
 
     runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-    batches = runs.data.max_num_seqs
+    batches = [r.max_num_seqs for r in runs]
     assert isinstance(batches, list)
     assert set(batches) == {16, 32}
 
-    powers = runs.data.avg_power_watts
+    powers = [r.avg_power_watts for r in runs]
     assert isinstance(powers, list)
     assert len(powers) == 2
 
@@ -284,18 +291,9 @@ def test_llm_runs_where_filter(tmp_path: Path) -> None:
 
 def test_llm_runs_empty_field_access() -> None:
     empty = LLMRuns([])
-    arr = empty.data.energy_per_token_joules
+    arr = [r.energy_per_token_joules for r in empty]
     assert isinstance(arr, list)
     assert len(arr) == 0
-
-
-def test_llm_runs_invalid_field_access() -> None:
-    empty = LLMRuns([])
-    try:
-        _ = empty.data.nonexistent_field  # type: ignore[attr-defined]
-        raise AssertionError("Should raise AttributeError")
-    except AttributeError:
-        pass
 
 
 def test_llm_runs_repr() -> None:
@@ -356,15 +354,14 @@ def test_llm_runs_architecture_filter(tmp_path: Path) -> None:
     assert len(moe) == 0
 
 
-def test_llm_runs_field_access_caching(tmp_path: Path) -> None:
+def test_llm_runs_field_access_list_comp(tmp_path: Path) -> None:
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
     _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
 
     runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-    arr1 = runs.data.max_num_seqs
-    arr2 = runs.data.max_num_seqs
-    assert arr1 is arr2
+    arr = [r.max_num_seqs for r in runs]
+    assert arr == [16]
 
 
 def test_llm_runs_timelines(tmp_path: Path) -> None:
@@ -465,14 +462,14 @@ def test_diffusion_runs_filtering(tmp_path: Path) -> None:
     runs = DiffusionRuns.from_raw_results(root, config_dir=cfg_root)
     assert len(runs) == 2
 
-    batch1 = runs.batch(1)
+    batch1 = runs.batch_size(1)
     assert len(batch1) == 1
     assert batch1[0].batch_size == 1
 
-    gpu_filter = runs.gpu("H100")
+    gpu_filter = runs.gpu_model("H100")
     assert len(gpu_filter) == 2
 
-    model_filter = runs.model("org/diffmodel")
+    model_filter = runs.model_id("org/diffmodel")
     assert len(model_filter) == 2
 
 
@@ -485,7 +482,7 @@ def test_diffusion_runs_field_access(tmp_path: Path) -> None:
     _make_diffusion_fixture(root, cfg_root, batch=2, size="1024x1024")
 
     runs = DiffusionRuns.from_raw_results(root, config_dir=cfg_root)
-    powers = runs.data.avg_power_watts
+    powers = [r.avg_power_watts for r in runs]
     assert isinstance(powers, list)
     assert len(powers) == 2
 
@@ -572,21 +569,21 @@ def test_llm_runs_batch_range(tmp_path: Path) -> None:
     runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
     assert len(runs) == 3
 
-    at_least_16 = runs.batch(min=16)
+    at_least_16 = runs.max_num_seqs(min=16)
     assert len(at_least_16) == 2
     assert all(r.max_num_seqs >= 16 for r in at_least_16)
 
-    at_most_16 = runs.batch(max=16)
+    at_most_16 = runs.max_num_seqs(max=16)
     assert len(at_most_16) == 2
     assert all(r.max_num_seqs <= 16 for r in at_most_16)
 
-    range_8_16 = runs.batch(min=8, max=16)
+    range_8_16 = runs.max_num_seqs(min=8, max=16)
     assert len(range_8_16) == 2
 
     with pytest.raises(ValueError):
-        runs.batch(16, min=8)
+        runs.max_num_seqs(16, min=8)
     with pytest.raises(TypeError):
-        runs.batch()
+        runs.max_num_seqs()
 
 
 def test_llm_runs_num_gpus_range(tmp_path: Path) -> None:
@@ -612,17 +609,17 @@ def test_diffusion_runs_batch_range(tmp_path: Path) -> None:
     _make_diffusion_fixture(root, cfg_root, batch=4, size="1024x1024")
 
     runs = DiffusionRuns.from_raw_results(root, config_dir=cfg_root)
-    big = runs.batch(min=2)
+    big = runs.batch_size(min=2)
     assert len(big) == 1
     assert big[0].batch_size == 4
 
     with pytest.raises(ValueError):
-        runs.batch(1, min=1)
+        runs.batch_size(1, min=1)
     with pytest.raises(TypeError):
-        runs.batch()
+        runs.batch_size()
 
 
-def test_llm_runs_data_accessor(tmp_path: Path) -> None:
+def test_llm_runs_list_comprehension_access(tmp_path: Path) -> None:
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
     _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
@@ -630,25 +627,16 @@ def test_llm_runs_data_accessor(tmp_path: Path) -> None:
 
     runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
 
-    energies = runs.data.energy_per_token_joules
+    energies = [r.energy_per_token_joules for r in runs]
     assert isinstance(energies, list)
     assert len(energies) == 2
 
-    gpus = runs.data.num_gpus
+    gpus = [r.num_gpus for r in runs]
     assert isinstance(gpus, list)
     assert all(isinstance(g, int) for g in gpus)
 
-    # Accessor is cached (same object on repeated access)
-    assert runs.data is runs.data
 
-    # Nonexistent field raises AttributeError
-    import pytest
-
-    with pytest.raises(AttributeError):
-        _ = runs.data.nonexistent_field  # type: ignore[attr-defined]
-
-
-def test_diffusion_runs_data_accessor(tmp_path: Path) -> None:
+def test_diffusion_runs_list_comprehension_access(tmp_path: Path) -> None:
     from mlenergy_data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
@@ -657,15 +645,13 @@ def test_diffusion_runs_data_accessor(tmp_path: Path) -> None:
 
     runs = DiffusionRuns.from_raw_results(root, config_dir=cfg_root)
 
-    powers = runs.data.avg_power_watts
+    powers = [r.avg_power_watts for r in runs]
     assert isinstance(powers, list)
     assert len(powers) == 1
 
-    tasks = runs.data.task
+    tasks = [r.task for r in runs]
     assert isinstance(tasks, list)
     assert tasks[0] == "text-to-image"
-
-    assert runs.data is runs.data
 
 
 def test_diffusion_runs_num_gpus_filter(tmp_path: Path) -> None:

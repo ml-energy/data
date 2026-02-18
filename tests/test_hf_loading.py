@@ -15,7 +15,6 @@ from mlenergy_data.records.runs import (
     DiffusionRuns,
     LLMRun,
     LLMRuns,
-    _HFSource,
 )
 
 LLM_FIELDS = frozenset(f.name for f in dataclasses.fields(LLMRun))
@@ -147,9 +146,14 @@ def _make_diffusion_fixture(
     )
 
 
-def _make_hf_source(root: Path, repo_id: str = "test/repo") -> _HFSource:
-    """Create an _HFSource with snapshot_root pointing at root."""
-    return _HFSource(repo_id=repo_id, revision=None, snapshot_root=root)
+def _make_hf_runs(runs: LLMRuns, root: Path, repo_id: str = "test/repo") -> LLMRuns:
+    """Create an LLMRuns with per-record HF metadata (simulates from_hf)."""
+    result = LLMRuns(list(runs))
+    for run in result._runs:
+        object.__setattr__(run, "_hf_repo_id", repo_id)
+        object.__setattr__(run, "_hf_revision", None)
+        object.__setattr__(run, "_hf_snapshot_root", str(root))
+    return result
 
 
 class TestLLMParquetRoundTrip:
@@ -165,14 +169,17 @@ class TestLLMParquetRoundTrip:
         assert len(original) == 2
 
         parquet_path = tmp_path / "llm.parquet"
-        original.to_dataframe().to_parquet(parquet_path, index=False)
+        df = original.to_dataframe()
+        df["results_path"] = [r._results_path for r in original]
+        df["prometheus_path"] = [r._prometheus_path for r in original]
+        df.to_parquet(parquet_path, index=False)
 
         restored = LLMRuns.from_parquet(parquet_path, stable_only=False)
         assert len(restored) == len(original)
 
         for orig, rest in zip(
-            sorted(original, key=lambda r: r.results_path),
-            sorted(restored, key=lambda r: r.results_path),
+            sorted(original, key=lambda r: r._results_path),
+            sorted(restored, key=lambda r: r._results_path),
             strict=True,
         ):
             for field in LLM_FIELDS:
@@ -194,7 +201,10 @@ class TestLLMParquetRoundTrip:
         all_runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
 
         parquet_path = tmp_path / "llm.parquet"
-        all_runs.to_dataframe().to_parquet(parquet_path, index=False)
+        df = all_runs.to_dataframe()
+        df["results_path"] = [r._results_path for r in all_runs]
+        df["prometheus_path"] = [r._prometheus_path for r in all_runs]
+        df.to_parquet(parquet_path, index=False)
 
         stable_only = LLMRuns.from_parquet(parquet_path, stable_only=True)
         all_restored = LLMRuns.from_parquet(parquet_path, stable_only=False)
@@ -210,7 +220,10 @@ class TestLLMParquetRoundTrip:
 
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         parquet_path = tmp_path / "llm.parquet"
-        runs.to_dataframe().to_parquet(parquet_path, index=False)
+        df = runs.to_dataframe()
+        df["results_path"] = [r._results_path for r in runs]
+        df["prometheus_path"] = [r._prometheus_path for r in runs]
+        df.to_parquet(parquet_path, index=False)
 
         filtered = LLMRuns.from_parquet(parquet_path, stable_only=False).task("gpqa")
         assert len(filtered) == 1
@@ -234,8 +247,8 @@ class TestLLMParquetRoundTrip:
 
         base = tmp_path / "base"
         restored = LLMRuns.from_parquet(parquet_path, base_dir=base, stable_only=False)
-        assert restored[0].results_path == str(base / "relative/path/results.json")
-        assert restored[0].prometheus_path == str(base / "relative/path/prometheus.json")
+        assert restored[0]._results_path == str(base / "relative/path/results.json")
+        assert restored[0]._prometheus_path == str(base / "relative/path/prometheus.json")
 
 
 class TestDiffusionParquetRoundTrip:
@@ -251,14 +264,16 @@ class TestDiffusionParquetRoundTrip:
         assert len(original) == 2
 
         parquet_path = tmp_path / "diffusion.parquet"
-        original.to_dataframe().to_parquet(parquet_path, index=False)
+        df = original.to_dataframe()
+        df["results_path"] = [r._results_path for r in original]
+        df.to_parquet(parquet_path, index=False)
 
         restored = DiffusionRuns.from_parquet(parquet_path)
         assert len(restored) == len(original)
 
         for orig, rest in zip(
-            sorted(original, key=lambda r: r.results_path),
-            sorted(restored, key=lambda r: r.results_path),
+            sorted(original, key=lambda r: r._results_path),
+            sorted(restored, key=lambda r: r._results_path),
             strict=True,
         ):
             for field in DIFFUSION_FIELDS:
@@ -335,8 +350,13 @@ class TestFromDirectory:
         compiled = tmp_path / "compiled"
         runs_dir = compiled / "runs"
         runs_dir.mkdir(parents=True)
-        llm.to_dataframe().to_parquet(runs_dir / "llm.parquet", index=False)
-        diff.to_dataframe().to_parquet(runs_dir / "diffusion.parquet", index=False)
+        llm_df = llm.to_dataframe()
+        llm_df["results_path"] = [r._results_path for r in llm]
+        llm_df["prometheus_path"] = [r._prometheus_path for r in llm]
+        llm_df.to_parquet(runs_dir / "llm.parquet", index=False)
+        diff_df = diff.to_dataframe()
+        diff_df["results_path"] = [r._results_path for r in diff]
+        diff_df.to_parquet(runs_dir / "diffusion.parquet", index=False)
         return compiled
 
     def test_llm_from_directory(self, tmp_path: Path) -> None:
@@ -388,8 +408,8 @@ class TestFromDirectory:
         df.to_parquet(runs_dir / "llm.parquet", index=False)
 
         runs = LLMRuns.from_directory(compiled, stable_only=False)
-        assert runs[0].results_path == str(compiled / "relative/path/results.json")
-        assert runs[0].prometheus_path == str(compiled / "relative/path/prometheus.json")
+        assert runs[0]._results_path == str(compiled / "relative/path/results.json")
+        assert runs[0]._prometheus_path == str(compiled / "relative/path/prometheus.json")
 
 
 class TestMissingRawDataError:
@@ -403,6 +423,7 @@ class TestMissingRawDataError:
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         df = runs.to_dataframe()
         df["results_path"] = "/nonexistent/path/results.json"
+        df["prometheus_path"] = [r._prometheus_path for r in runs]
 
         parquet_path = tmp_path / "llm.parquet"
         df.to_parquet(parquet_path, index=False)
@@ -412,68 +433,51 @@ class TestMissingRawDataError:
             restored.output_lengths()
 
 
-class TestHFSourcePropagation:
-    """Test _hf_source propagation through filter chains."""
+class TestPerRecordHFMetadata:
+    """Test per-record HF metadata propagation through filter chains."""
 
     @pytest.fixture()
     def hf_runs(self, tmp_path: Path) -> LLMRuns:
-        """Build an LLMRuns with _hf_source set."""
+        """Build an LLMRuns with per-record HF metadata set."""
         root = tmp_path / "bench"
         cfg_root = tmp_path / "cfg"
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=2)
 
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _make_hf_source(root)
-        return LLMRuns(list(runs), _hf_source=source)
+        return _make_hf_runs(runs, root)
 
-    def test_filter_propagates_source(self, hf_runs: LLMRuns) -> None:
+    def test_filter_preserves_metadata(self, hf_runs: LLMRuns) -> None:
         filtered = hf_runs.task("gpqa")
-        assert filtered._hf_source == hf_runs._hf_source
+        for r in filtered:
+            assert r.__dict__.get("_hf_repo_id") == "test/repo"
 
-    def test_where_propagates_source(self, hf_runs: LLMRuns) -> None:
+    def test_where_preserves_metadata(self, hf_runs: LLMRuns) -> None:
         filtered = hf_runs.where(lambda r: r.max_num_seqs == 16)
-        assert filtered._hf_source == hf_runs._hf_source
+        for r in filtered:
+            assert r.__dict__.get("_hf_repo_id") == "test/repo"
 
-    def test_stable_propagates_source(self, hf_runs: LLMRuns) -> None:
+    def test_stable_preserves_metadata(self, hf_runs: LLMRuns) -> None:
         filtered = hf_runs.stable()
-        assert filtered._hf_source == hf_runs._hf_source
+        for r in filtered:
+            assert r.__dict__.get("_hf_repo_id") == "test/repo"
 
-    def test_group_by_propagates_source(self, hf_runs: LLMRuns) -> None:
+    def test_group_by_preserves_metadata(self, hf_runs: LLMRuns) -> None:
         groups = hf_runs.group_by("max_num_seqs")
         for group in groups.values():
-            assert group._hf_source == hf_runs._hf_source
-
-    def test_add_same_source_preserves(self, hf_runs: LLMRuns) -> None:
-        a = hf_runs.batch(16)
-        b = hf_runs.batch(32)
-        combined = a + b
-        assert combined._hf_source == hf_runs._hf_source
-
-    def test_add_different_source_drops(self, tmp_path: Path) -> None:
-        root = tmp_path / "bench"
-        cfg_root = tmp_path / "cfg"
-        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
-
-        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source_a = _make_hf_source(root, repo_id="test/repo-a")
-        source_b = _make_hf_source(root, repo_id="test/repo-b")
-        a = LLMRuns(list(runs), _hf_source=source_a)
-        b = LLMRuns(list(runs), _hf_source=source_b)
-        combined = a + b
-        assert combined._hf_source is None
+            for r in group:
+                assert r.__dict__.get("_hf_repo_id") == "test/repo"
 
     def test_auto_fetch_output_lengths(self, tmp_path: Path) -> None:
-        """_ensure_raw_files triggers download_file for HF-sourced collections."""
+        """Per-record download triggers download_file for HF-sourced runs."""
         root = tmp_path / "bench"
         cfg_root = tmp_path / "cfg"
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
 
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _make_hf_source(root)
-        hf_runs = LLMRuns(list(runs), _hf_source=source)
+        hf_runs = _make_hf_runs(runs, root)
 
-        actual_path = runs[0].results_path
+        actual_path = runs[0]._results_path
 
         with patch(
             "mlenergy_data.records.runs.download_file",
@@ -499,13 +503,12 @@ class TestSelectiveDownload:
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         assert len(runs) == 3
 
-        source = _make_hf_source(root)
-        hf_runs = LLMRuns(list(runs), _hf_source=source)
-        paths_by_batch = {r.max_num_seqs: r.results_path for r in runs}
+        hf_runs = _make_hf_runs(runs, root)
+        paths_by_batch = {r.max_num_seqs: r._results_path for r in runs}
         return hf_runs, root, paths_by_batch
 
     def _rel(self, root: Path, path: str) -> str:
-        """Get the relative path that _ensure_raw_files will compute."""
+        """Get the relative path that _ensure_downloaded will compute."""
         return str(Path(path).relative_to(root))
 
     def _mock_download(self, root: Path, paths_by_batch: dict[int, str]):
@@ -522,7 +525,7 @@ class TestSelectiveDownload:
     ) -> None:
         """Filtering to batch=8 should only download files for that one run."""
         hf_runs, root, paths_by_batch = multi_run_setup
-        filtered = hf_runs.batch(8)
+        filtered = hf_runs.max_num_seqs(8)
         assert len(filtered) == 1
 
         with patch(
@@ -563,15 +566,13 @@ class TestSelectiveDownload:
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         assert len(runs) == 4
 
-        source = _make_hf_source(root)
-        hf_runs = LLMRuns(list(runs), _hf_source=source)
-
-        path_index = {(r.task, r.max_num_seqs): r.results_path for r in runs}
+        hf_runs = _make_hf_runs(runs, root)
+        path_index = {(r.task, r.max_num_seqs): r._results_path for r in runs}
 
         def _side_effect(repo_id: str, filename: str, **kwargs: object) -> Path:
             return root / filename
 
-        filtered = hf_runs.task("gpqa").batch(16)
+        filtered = hf_runs.task("gpqa").max_num_seqs(16)
         assert len(filtered) == 1
 
         with patch(
@@ -591,7 +592,7 @@ class TestSelectiveDownload:
     ) -> None:
         """timelines() on a filtered collection should also scope downloads."""
         hf_runs, root, paths_by_batch = multi_run_setup
-        filtered = hf_runs.batch(32)
+        filtered = hf_runs.max_num_seqs(32)
         assert len(filtered) == 1
 
         with patch(
@@ -605,20 +606,20 @@ class TestSelectiveDownload:
             assert self._rel(root, paths_by_batch[8]) not in downloaded
             assert self._rel(root, paths_by_batch[16]) not in downloaded
 
-    def test_prefetch_downloads_current_scope(
+    def test_download_raw_files_downloads_current_scope(
         self,
         multi_run_setup: tuple[LLMRuns, Path, dict[int, str]],
     ) -> None:
-        """prefetch() on a filtered collection only downloads that subset."""
+        """download_raw_files() on a filtered collection only downloads that subset."""
         hf_runs, root, paths_by_batch = multi_run_setup
-        filtered = hf_runs.batch(8, 16)
+        filtered = hf_runs.max_num_seqs(8, 16)
         assert len(filtered) == 2
 
         with patch(
             "mlenergy_data.records.runs.download_file",
             side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
-            filtered.prefetch()
+            filtered.download_raw_files()
             downloaded = {call.args[1] for call in mock.call_args_list}
             assert self._rel(root, paths_by_batch[8]) in downloaded
             assert self._rel(root, paths_by_batch[16]) in downloaded
@@ -628,9 +629,9 @@ class TestSelectiveDownload:
         self,
         multi_run_setup: tuple[LLMRuns, Path, dict[int, str]],
     ) -> None:
-        """Second call to output_lengths() should not re-download."""
+        """Second call to output_lengths() should not re-download (per-record cache)."""
         hf_runs, root, paths_by_batch = multi_run_setup
-        filtered = hf_runs.batch(8)
+        filtered = hf_runs.max_num_seqs(8)
 
         with patch(
             "mlenergy_data.records.runs.download_file",
@@ -643,42 +644,8 @@ class TestSelectiveDownload:
             assert mock.call_count == first_count
 
 
-class TestDataPathDownloadTrigger:
-    """Test that data.results_path and data.prometheus_path trigger download."""
-
-    def test_data_results_path_triggers_download(self, tmp_path: Path) -> None:
-        """Accessing data.results_path should trigger _ensure_raw_files."""
-        root = tmp_path / "bench"
-        cfg_root = tmp_path / "cfg"
-        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
-
-        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _make_hf_source(root)
-        hf_runs = LLMRuns(list(runs), _hf_source=source)
-
-        with patch(
-            "mlenergy_data.records.runs.download_file",
-            return_value=Path(runs[0].results_path),
-        ) as mock:
-            _ = hf_runs.data.results_path
-            assert mock.call_count >= 1
-
-    def test_data_prometheus_path_triggers_download(self, tmp_path: Path) -> None:
-        """Accessing data.prometheus_path should trigger _ensure_raw_files."""
-        root = tmp_path / "bench"
-        cfg_root = tmp_path / "cfg"
-        _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
-
-        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _make_hf_source(root)
-        hf_runs = LLMRuns(list(runs), _hf_source=source)
-
-        with patch(
-            "mlenergy_data.records.runs.download_file",
-            return_value=Path(runs[0].results_path),
-        ) as mock:
-            _ = hf_runs.data.prometheus_path
-            assert mock.call_count >= 1
+class TestDownloadTriggers:
+    """Test that per-record methods trigger download while iteration does not."""
 
     def test_iteration_does_not_trigger_download(self, tmp_path: Path) -> None:
         """Iterating over runs should NOT trigger download_file."""
@@ -687,8 +654,7 @@ class TestDataPathDownloadTrigger:
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
 
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _make_hf_source(root)
-        hf_runs = LLMRuns(list(runs), _hf_source=source)
+        hf_runs = _make_hf_runs(runs, root)
 
         with patch("mlenergy_data.records.runs.download_file") as mock:
             for r in hf_runs:
@@ -697,20 +663,19 @@ class TestDataPathDownloadTrigger:
             _ = len(hf_runs)
             assert mock.call_count == 0
 
-    def test_non_path_data_fields_no_download(self, tmp_path: Path) -> None:
-        """Accessing data.num_gpus or data.task should NOT trigger download."""
+    def test_field_access_does_not_trigger_download(self, tmp_path: Path) -> None:
+        """Accessing regular fields via list comprehension should NOT trigger download."""
         root = tmp_path / "bench"
         cfg_root = tmp_path / "cfg"
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
 
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _make_hf_source(root)
-        hf_runs = LLMRuns(list(runs), _hf_source=source)
+        hf_runs = _make_hf_runs(runs, root)
 
         with patch("mlenergy_data.records.runs.download_file") as mock:
-            _ = hf_runs.data.num_gpus
-            _ = hf_runs.data.task
-            _ = hf_runs.data.energy_per_token_joules
+            _ = [r.num_gpus for r in hf_runs]
+            _ = [r.task for r in hf_runs]
+            _ = [r.energy_per_token_joules for r in hf_runs]
             assert mock.call_count == 0
 
 
@@ -726,7 +691,6 @@ class TestInterTokenLatencies:
         df = runs.inter_token_latencies()
         assert len(df) > 0
         assert set(df.columns) == {
-            "results_path",
             "task",
             "model_id",
             "num_gpus",
@@ -747,12 +711,11 @@ class TestInterTokenLatencies:
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
 
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-        source = _make_hf_source(root)
-        hf_runs = LLMRuns(list(runs), _hf_source=source)
+        hf_runs = _make_hf_runs(runs, root)
 
         with patch(
             "mlenergy_data.records.runs.download_file",
-            return_value=Path(runs[0].results_path),
+            return_value=Path(runs[0]._results_path),
         ) as mock:
             df = hf_runs.inter_token_latencies()
             assert len(df) > 0

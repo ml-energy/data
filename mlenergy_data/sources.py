@@ -76,7 +76,7 @@ def download_file(
 ) -> Path:
     """Download a single file from a HF dataset repo.
 
-    Respects the ``HF_HOME`` environment variable for cache location.
+    Respects the `HF_HOME` environment variable for cache location.
 
     Args:
         repo_id: HF dataset repository ID.

@@ -234,8 +234,11 @@ def main() -> None:
     diff_df = diff.to_dataframe()
 
     if not llm_df.empty:
+        llm_df["results_path"] = [r._results_path for r in llm]
+        llm_df["prometheus_path"] = [r._prometheus_path for r in llm]
         llm_df = _rewrite_paths_relative(llm_df, results_dirs)
     if not diff_df.empty:
+        diff_df["results_path"] = [r._results_path for r in diff]
         diff_df = _rewrite_paths_relative(diff_df, results_dirs)
 
     llm_df.to_parquet(runs_dir / "llm.parquet", index=False)

@@ -34,12 +34,11 @@ from mlenergy_data.records import LLMRuns
 
 runs = LLMRuns.from_hf()
 
-# Find the most energy-efficient model on GPQA
+# Find the minimum-energy model on GPQA
 best = min(runs.task("gpqa"), key=lambda r: r.energy_per_token_joules)
 print(f"{best.nickname}: {best.energy_per_token_joules:.3f} J/tok on {best.gpu_model}")
 
-# Column access via .data
-energies = runs.data.energy_per_token_joules  # list[float]
+energies = [r.energy_per_token_joules for r in runs]
 ```
 
 Filter, group, and compare across GPU generations and model architectures:
@@ -52,7 +51,7 @@ for gpu, group in runs.task("gpqa").group_by("gpu_model").items():
           f"{best.output_throughput_tokens_per_sec:.0f} tok/s")
 
 # MoE, Dense, Hybrid: who's more energy-efficient?
-for arch, group in runs.task("gpqa").gpu("B200").group_by("architecture").items():
+for arch, group in runs.task("gpqa").gpu_model("B200").group_by("architecture").items():
     best = min(group, key=lambda r: r.energy_per_token_joules)
     print(f"{arch}: {best.nickname} @ {best.energy_per_token_joules:.3f} J/tok")
 ```
@@ -65,10 +64,10 @@ for arch, group in runs.task("gpqa").gpu("B200").group_by("architecture").items(
 
 ## Documentation
 
-See the full [documentation site](https://ml-energy.github.io/mlenergy-data/) for:
+See the full [documentation site](https://ml.energy/data/) for:
 
-- [Usage guide](https://ml-energy.github.io/mlenergy-data/guide/) — progressive walkthrough from loading data to fitting models.
-- [API reference](https://ml-energy.github.io/mlenergy-data/api/records/) — auto-generated from docstrings.
+- [Usage guide](https://ml.energy/data/guide/) — progressive walkthrough from loading data to fitting models.
+- [API reference](https://ml.energy/data/api/records/) — auto-generated from docstrings.
 
 ## Citation
 

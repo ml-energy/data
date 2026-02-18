@@ -13,27 +13,18 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 import yaml
 
 from mlenergy_data.raw.path_parser import ParsedPath, parse_results_path
-from mlenergy_data.records.timelines import load_timeline_table
+from mlenergy_data.records.timelines import extract_device_timeline
 from mlenergy_data.sources import download_file
 
 logger = logging.getLogger(__name__)
 _MP_CONTEXT = mp.get_context("spawn")
-
-
-@dataclass(frozen=True)
-class _HFSource:
-    """HF Hub origin metadata, propagated through filters for lazy raw-file downloads."""
-
-    repo_id: str
-    revision: str | None
-    snapshot_root: Path
 
 
 @dataclass(frozen=True)
@@ -579,8 +570,8 @@ def _llm_row(
         avg_batch_size=avg_batch_size,
         is_stable=True,
         unstable_reason="",
-        results_path=str(p),
-        prometheus_path=str(prom_path),
+        _results_path=str(p),
+        _prometheus_path=str(prom_path),
     )
 
 
@@ -710,7 +701,7 @@ def _diffusion_row(
         avg_power_watts=avg_power,
         energy_per_generation_joules=energy_per_output,
         throughput_generations_per_sec=throughput,
-        results_path=str(p),
+        _results_path=str(p),
     )
 
 
@@ -809,7 +800,7 @@ def _load_runs_from_roots(
         return []
 
     for i, row in enumerate(rows):
-        rid = str(Path(row.results_path).resolve())
+        rid = str(Path(row._results_path).resolve())
         is_unstable, reason = status_map.get(rid, (False, ""))
         if isinstance(row, LLMRun):
             rows[i] = replace(row, is_stable=not is_unstable, unstable_reason=reason)
@@ -826,8 +817,8 @@ def _auto_detect_config(
 ) -> Path | None:
     """Auto-detect embedded config directory from data roots.
 
-    Looks for ``configs/{config_subdir}`` inside each root directory.
-    Returns the first match, or ``None`` if not found.
+    Looks for `configs/{config_subdir}` inside each root directory.
+    Returns the first match, or `None` if not found.
     """
     for raw_root in roots:
         candidate = Path(raw_root) / "configs" / config_subdir
@@ -837,20 +828,54 @@ def _auto_detect_config(
     return None
 
 
+def _resolve_timeline_metric(
+    timeline: dict[str, Any],
+    metric: str,
+) -> tuple[dict[str, list[list[float]]], str]:
+    """Navigate a `results.timeline` dict to the device-level series.
+
+    Args:
+        timeline: The `results["timeline"]` dict.
+        metric: One of `"power.device_instant"`, `"power.device_average"`,
+            `"temperature"`.
+
+    Returns:
+        `(device_series, label)` where `device_series` is
+        `{gpu_id: [[ts, val], ...]}` and `label` is the column name prefix.
+    """
+    if metric in ("power.device_instant", "power.device_average"):
+        group_name, metric_name = metric.split(".")
+        group = timeline.get(group_name)
+        if not isinstance(group, dict):
+            raise ValueError(f"timeline.{group_name} is missing or not a dict")
+        series = group.get(metric_name)
+        if not isinstance(series, dict):
+            raise ValueError(f"timeline.{group_name}.{metric_name} is missing or not a dict")
+        return series, f"{group_name}_{metric_name}"
+
+    if metric == "temperature":
+        temp = timeline.get("temperature")
+        if not isinstance(temp, dict):
+            raise ValueError("timeline.temperature is missing or not a dict")
+        return temp, "temperature"
+
+    raise ValueError(f"Unsupported metric={metric!r}")
+
+
 @dataclass(frozen=True)
 class LLMRun:
     """A single LLM benchmark run.
 
     Attributes:
-        domain: Always ``"llm"``.
-        task: Benchmark task (e.g. ``"gpqa"``, ``"lm-arena-chat"``).
-        model_id: Full HF model identifier (e.g. ``"meta-llama/Llama-3.1-8B-Instruct"``).
-        nickname: Human-friendly display name from ``model_info.json``.
-        architecture: Model architecture (``"Dense"`` or ``"MoE"``).
+        domain: Always `"llm"`.
+        task: Benchmark task (e.g. `"gpqa"`, `"lm-arena-chat"`).
+        model_id: Full HF model identifier (e.g. `"meta-llama/Llama-3.1-8B-Instruct"`).
+        nickname: Human-friendly display name from `model_info.json`.
+        architecture: Model architecture (`"Dense"` or `"MoE"`).
         total_params_billions: Total parameter count in billions.
         activated_params_billions: Activated parameter count in billions (equals total for dense).
-        weight_precision: Weight precision (e.g. ``"bfloat16"``, ``"fp8"``).
-        gpu_model: GPU model identifier (e.g. ``"H100"``, ``"B200"``).
+        weight_precision: Weight precision (e.g. `"bfloat16"`, `"fp8"`).
+        gpu_model: GPU model identifier (e.g. `"H100"`, `"B200"`).
         num_gpus: Number of GPUs used.
         max_num_seqs: Maximum concurrent sequences (batch size).
         seed: Random seed used for the benchmark run.
@@ -877,8 +902,6 @@ class LLMRun:
         avg_batch_size: Average concurrent sequences during steady state (from Prometheus).
         is_stable: Whether this run passed stability checks.
         unstable_reason: Reason for instability (empty if stable).
-        results_path: Path to the raw ``results.json`` file.
-        prometheus_path: Path to the ``prometheus.json`` file.
     """
 
     domain: str
@@ -916,8 +939,136 @@ class LLMRun:
     avg_batch_size: float | None
     is_stable: bool
     unstable_reason: str
-    results_path: str
-    prometheus_path: str
+    _results_path: str
+    _prometheus_path: str
+
+    def _ensure_downloaded(self, path_field: str) -> None:
+        """If this record was loaded from HF, download the file at path_field."""
+        repo_id = self.__dict__.get("_hf_repo_id")
+        if repo_id is None:
+            return
+        path_val = getattr(self, path_field)
+        if not path_val:
+            return
+        root = self.__dict__["_hf_snapshot_root"]
+        rel = str(Path(path_val).relative_to(root))
+        download_file(repo_id, rel, revision=self.__dict__.get("_hf_revision"))
+
+    def read_results_json(self) -> dict[str, Any]:
+        """Download (if needed) and return parsed results.json.
+
+        Caches the parsed dict per instance so repeated calls are free.
+        """
+        cached = self.__dict__.get("_results_json_cache")
+        if cached is not None:
+            return cached
+        self._ensure_downloaded("_results_path")
+        p = Path(self._results_path)
+        if not p.exists():
+            raise FileNotFoundError(f"Raw results file not found: {p}")
+        data = json.loads(p.read_text())
+        object.__setattr__(self, "_results_json_cache", data)
+        return data
+
+    def read_prometheus_json(self) -> dict[str, Any]:
+        """Download (if needed) and return parsed prometheus.json.
+
+        Caches the parsed dict per instance so repeated calls are free.
+        """
+        cached = self.__dict__.get("_prometheus_json_cache")
+        if cached is not None:
+            return cached
+        if not self._prometheus_path:
+            raise ValueError("No prometheus.json path for this run")
+        self._ensure_downloaded("_prometheus_path")
+        p = Path(self._prometheus_path)
+        if not p.exists():
+            raise FileNotFoundError(f"Prometheus file not found: {p}")
+        data = json.loads(p.read_text())
+        object.__setattr__(self, "_prometheus_json_cache", data)
+        return data
+
+    def output_lengths(self, *, include_unsuccessful: bool = False) -> list[int]:
+        """Return per-request output token lengths from results.json.
+
+        Args:
+            include_unsuccessful: If True, include requests that failed
+                during benchmarking. Defaults to False.
+        """
+        data = self.read_results_json()
+        reqs = data.get("results")
+        if not isinstance(reqs, list):
+            raise ValueError(f"Missing required 'results' list in {self._results_path}")
+        lengths: list[int] = []
+        for req in reqs:
+            success = bool(req.get("success", False))
+            if not include_unsuccessful and not success:
+                continue
+            output_len = req.get("output_len")
+            if output_len is None:
+                if success:
+                    raise ValueError(
+                        f"Missing required output_len for successful request "
+                        f"in {self._results_path}"
+                    )
+                continue
+            lengths.append(int(output_len))
+        return lengths
+
+    def inter_token_latencies(self) -> list[float]:
+        """Return inter-token latency samples in seconds from results.json."""
+        data = self.read_results_json()
+        vals: list[float] = []
+        for req in data.get("results", []):
+            if not req.get("success", False):
+                continue
+            raw_itl = [float(x) for x in req.get("itl", [])]
+            vals.extend(_smooth_chunked_itl(raw_itl))
+        arr = [x for x in vals if x > 0 and np.isfinite(x)]
+        if not arr:
+            raise ValueError(f"No valid ITL samples in run: {self._results_path}")
+        return arr
+
+    def timelines(
+        self,
+        *,
+        metric: Literal[
+            "power.device_instant", "power.device_average", "temperature"
+        ] = "power.device_instant",
+    ) -> pd.DataFrame:
+        """Return power/temperature timeseries for this run.
+
+        Args:
+            metric: Which timeline to extract. Supported values:
+                `"power.device_instant"`, `"power.device_average"`,
+                `"temperature"`.
+
+        Returns:
+            DataFrame with columns: timestamp, relative_time_s, value, metric.
+        """
+        data = self.read_results_json()
+        timeline = data.get("timeline")
+        if not isinstance(timeline, dict):
+            raise ValueError("results.timeline is missing or not a dict")
+        ss_start = timeline.get("steady_state_start_time")
+        ss_end = timeline.get("steady_state_end_time")
+        if ss_start is None or ss_end is None:
+            raise ValueError("Steady-state bounds missing from results.timeline")
+        series, label = _resolve_timeline_metric(timeline, metric)
+        wide = extract_device_timeline(
+            series,
+            label=label,
+            steady_state_start=float(ss_start),
+            steady_state_end=float(ss_end),
+        )
+        return pd.DataFrame(
+            {
+                "timestamp": wide["timestamp"],
+                "relative_time_s": wide["relative_time_s"],
+                "value": wide[f"{label}_total"],
+                "metric": metric,
+            }
+        )
 
 
 @dataclass(frozen=True)
@@ -925,21 +1076,21 @@ class DiffusionRun:
     """A single diffusion model benchmark run.
 
     Attributes:
-        domain: Always ``"diffusion"``.
-        task: Benchmark task (``"text-to-image"`` or ``"text-to-video"``).
+        domain: Always `"diffusion"`.
+        task: Benchmark task (`"text-to-image"` or `"text-to-video"`).
         model_id: Full HF model identifier.
-        nickname: Human-friendly display name from ``model_info.json``.
+        nickname: Human-friendly display name from `model_info.json`.
         total_params_billions: Total parameter count in billions.
         activated_params_billions: Activated parameter count in billions.
-        weight_precision: Weight precision (e.g. ``"bfloat16"``, ``"fp8"``).
-        gpu_model: GPU model identifier (e.g. ``"H100"``).
+        weight_precision: Weight precision (e.g. `"bfloat16"`, `"fp8"`).
+        gpu_model: GPU model identifier (e.g. `"H100"`).
         num_gpus: Number of GPUs used.
         batch_size: Batch size.
         inference_steps: Number of diffusion inference steps.
         height: Output height in pixels.
         width: Output width in pixels.
-        num_frames: Number of video frames (``None`` for images).
-        fps: Video frames per second (``None`` for images).
+        num_frames: Number of video frames (`None` for images).
+        fps: Video frames per second (`None` for images).
         ulysses_degree: Ulysses sequence parallelism degree.
         ring_degree: Ring attention parallelism degree.
         use_torch_compile: Whether torch.compile was enabled.
@@ -947,7 +1098,6 @@ class DiffusionRun:
         avg_power_watts: Average GPU power in watts.
         energy_per_generation_joules: Energy per generated output (image or video) in joules.
         throughput_generations_per_sec: Throughput in generations per second.
-        results_path: Path to the raw ``results.json`` file.
     """
 
     domain: str
@@ -972,7 +1122,7 @@ class DiffusionRun:
     avg_power_watts: float
     energy_per_generation_joules: float
     throughput_generations_per_sec: float
-    results_path: str
+    _results_path: str
 
     @property
     def is_text_to_image(self) -> bool:
@@ -984,496 +1134,129 @@ class DiffusionRun:
         """Whether this is a text-to-video run."""
         return self.task == "text-to-video"
 
+    def _ensure_downloaded(self, path_field: str) -> None:
+        """If this record was loaded from HF, download the file at path_field."""
+        repo_id = self.__dict__.get("_hf_repo_id")
+        if repo_id is None:
+            return
+        path_val = getattr(self, path_field)
+        if not path_val:
+            return
+        root = self.__dict__["_hf_snapshot_root"]
+        rel = str(Path(path_val).relative_to(root))
+        download_file(repo_id, rel, revision=self.__dict__.get("_hf_revision"))
+
+    def read_results_json(self) -> dict[str, Any]:
+        """Download (if needed) and return parsed results.json.
+
+        Caches the parsed dict per instance so repeated calls are free.
+        """
+        cached = self.__dict__.get("_results_json_cache")
+        if cached is not None:
+            return cached
+        self._ensure_downloaded("_results_path")
+        p = Path(self._results_path)
+        if not p.exists():
+            raise FileNotFoundError(f"Raw results file not found: {p}")
+        data = json.loads(p.read_text())
+        object.__setattr__(self, "_results_json_cache", data)
+        return data
+
+    def timelines(
+        self,
+        *,
+        metric: Literal[
+            "power.device_instant", "power.device_average", "temperature"
+        ] = "power.device_instant",
+    ) -> pd.DataFrame:
+        """Return power/temperature timeseries for this run.
+
+        Diffusion runs do not have steady-state bounds, so the full
+        timeline is returned.
+
+        Args:
+            metric: Which timeline to extract. Supported values:
+                `"power.device_instant"`, `"power.device_average"`,
+                `"temperature"`.
+
+        Returns:
+            DataFrame with columns: timestamp, relative_time_s, value, metric.
+        """
+        data = self.read_results_json()
+        timeline = data.get("timeline")
+        if not isinstance(timeline, dict):
+            raise ValueError("results.timeline is missing or not a dict")
+        series, label = _resolve_timeline_metric(timeline, metric)
+        wide = extract_device_timeline(series, label=label)
+        return pd.DataFrame(
+            {
+                "timestamp": wide["timestamp"],
+                "relative_time_s": wide["relative_time_s"],
+                "value": wide[f"{label}_total"],
+                "metric": metric,
+            }
+        )
+
 
 _LLM_FIELDS = frozenset(f.name for f in dataclasses.fields(LLMRun))
 _DIFFUSION_FIELDS = frozenset(f.name for f in dataclasses.fields(DiffusionRun))
 
 
-class _LLMRunsData:
-    """Typed field accessor for LLMRuns, returning `list[T]` per field.
-
-    Accessed via `LLMRuns.data`. Provides IDE autocomplete and type-safe
-    access to field arrays without collisions with filter method names
-    (e.g. `runs.data.num_gpus` returns `list[int]` whereas `runs.num_gpus`
-    is the filter method).
-
-    When adding fields to `LLMRun`, add a matching `@property` stub
-    inside the `if TYPE_CHECKING` block below to keep types in sync.
-    """
-
-    __slots__ = ("_cache", "_ensure_raw", "_runs")
-
-    def __init__(
-        self,
-        runs: tuple[LLMRun, ...],
-        cache: dict[str, Any],
-        ensure_raw: Callable[[], None],
-    ) -> None:
-        self._runs = runs
-        self._cache = cache
-        self._ensure_raw = ensure_raw
-
-    @property
-    def results_path(self) -> list[str]:
-        """Path to the raw results.json file. Triggers download if needed."""
-        self._ensure_raw()
-        key = "_data_results_path"
-        if key not in self._cache:
-            self._cache[key] = [r.results_path for r in self._runs]
-        return self._cache[key]
-
-    @property
-    def prometheus_path(self) -> list[str]:
-        """Path to the prometheus.json file. Triggers download if needed."""
-        self._ensure_raw()
-        key = "_data_prometheus_path"
-        if key not in self._cache:
-            self._cache[key] = [r.prometheus_path for r in self._runs]
-        return self._cache[key]
-
-    if not TYPE_CHECKING:
-
-        def __getattr__(self, name: str) -> list[Any]:
-            if name not in _LLM_FIELDS:
-                raise AttributeError(f"LLMRun has no field {name!r}")
-            key = f"_data_{name}"
-            if key not in self._cache:
-                self._cache[key] = [getattr(r, name) for r in self._runs]
-            return self._cache[key]
-
-    if TYPE_CHECKING:
-
-        @property
-        def domain(self) -> list[str]:
-            """Always ``"llm"``."""
-            ...
-
-        @property
-        def task(self) -> list[str]:
-            """Benchmark task identifier."""
-            ...
-
-        @property
-        def model_id(self) -> list[str]:
-            """Full HF model identifier."""
-            ...
-
-        @property
-        def nickname(self) -> list[str]:
-            """Human-friendly display name."""
-            ...
-
-        @property
-        def architecture(self) -> list[str]:
-            """Model architecture (``"Dense"`` or ``"MoE"``)."""
-            ...
-
-        @property
-        def total_params_billions(self) -> list[float]:
-            """Total parameter count in billions."""
-            ...
-
-        @property
-        def activated_params_billions(self) -> list[float]:
-            """Activated parameter count in billions."""
-            ...
-
-        @property
-        def weight_precision(self) -> list[str]:
-            """Weight precision (e.g. ``"bfloat16"``)."""
-            ...
-
-        @property
-        def gpu_model(self) -> list[str]:
-            """GPU model identifier."""
-            ...
-
-        @property
-        def num_gpus(self) -> list[int]:
-            """Number of GPUs used."""
-            ...
-
-        @property
-        def max_num_seqs(self) -> list[int]:
-            """Maximum concurrent sequences (batch size)."""
-            ...
-
-        @property
-        def seed(self) -> list[int | None]:
-            """Random seed."""
-            ...
-
-        @property
-        def num_request_repeats(self) -> list[int | None]:
-            """Number of request repetitions."""
-            ...
-
-        @property
-        def tensor_parallel(self) -> list[int]:
-            """Tensor parallelism degree."""
-            ...
-
-        @property
-        def expert_parallel(self) -> list[int]:
-            """Expert parallelism degree."""
-            ...
-
-        @property
-        def data_parallel(self) -> list[int]:
-            """Data parallelism degree."""
-            ...
-
-        @property
-        def steady_state_energy_joules(self) -> list[float]:
-            """Total GPU energy during steady state in joules."""
-            ...
-
-        @property
-        def steady_state_duration_seconds(self) -> list[float]:
-            """Duration of steady state in seconds."""
-            ...
-
-        @property
-        def energy_per_token_joules(self) -> list[float]:
-            """Steady-state energy per output token in joules."""
-            ...
-
-        @property
-        def energy_per_request_joules(self) -> list[float | None]:
-            """Estimated energy per request in joules."""
-            ...
-
-        @property
-        def output_throughput_tokens_per_sec(self) -> list[float]:
-            """Steady-state output throughput in tokens/second."""
-            ...
-
-        @property
-        def request_throughput_req_per_sec(self) -> list[float | None]:
-            """Steady-state request throughput in requests/second."""
-            ...
-
-        @property
-        def avg_power_watts(self) -> list[float]:
-            """Average GPU power during steady state in watts."""
-            ...
-
-        @property
-        def total_output_tokens(self) -> list[float | None]:
-            """Total output tokens generated (over full benchmark)."""
-            ...
-
-        @property
-        def completed_requests(self) -> list[float | None]:
-            """Number of completed requests (over full benchmark)."""
-            ...
-
-        @property
-        def avg_output_len(self) -> list[float | None]:
-            """Average output length in tokens."""
-            ...
-
-        @property
-        def mean_itl_ms(self) -> list[float]:
-            """Mean inter-token latency in milliseconds."""
-            ...
-
-        @property
-        def median_itl_ms(self) -> list[float]:
-            """Median inter-token latency in milliseconds."""
-            ...
-
-        @property
-        def p50_itl_ms(self) -> list[float]:
-            """50th percentile inter-token latency in milliseconds."""
-            ...
-
-        @property
-        def p90_itl_ms(self) -> list[float]:
-            """90th percentile inter-token latency in milliseconds."""
-            ...
-
-        @property
-        def p95_itl_ms(self) -> list[float]:
-            """95th percentile inter-token latency in milliseconds."""
-            ...
-
-        @property
-        def p99_itl_ms(self) -> list[float]:
-            """99th percentile inter-token latency in milliseconds."""
-            ...
-
-        @property
-        def avg_batch_size(self) -> list[float | None]:
-            """Average concurrent sequences during steady state (from Prometheus)."""
-            ...
-
-        @property
-        def is_stable(self) -> list[bool]:
-            """Whether this run passed stability checks."""
-            ...
-
-        @property
-        def unstable_reason(self) -> list[str]:
-            """Reason for instability."""
-            ...
-
-
-class _DiffusionRunsData:
-    """Typed field accessor for DiffusionRuns, returning `list[T]` per field.
-
-    Accessed via `DiffusionRuns.data`. Provides IDE autocomplete and type-safe
-    access to field arrays without collisions with filter method names.
-
-    When adding fields to `DiffusionRun`, add a matching `@property` stub
-    inside the `if TYPE_CHECKING` block below to keep types in sync.
-    """
-
-    __slots__ = ("_cache", "_ensure_raw", "_runs")
-
-    def __init__(
-        self,
-        runs: tuple[DiffusionRun, ...],
-        cache: dict[str, Any],
-        ensure_raw: Callable[[], None],
-    ) -> None:
-        self._runs = runs
-        self._cache = cache
-        self._ensure_raw = ensure_raw
-
-    @property
-    def results_path(self) -> list[str]:
-        """Path to the raw results.json file. Triggers download if needed."""
-        self._ensure_raw()
-        key = "_data_results_path"
-        if key not in self._cache:
-            self._cache[key] = [r.results_path for r in self._runs]
-        return self._cache[key]
-
-    if not TYPE_CHECKING:
-
-        def __getattr__(self, name: str) -> list[Any]:
-            if name not in _DIFFUSION_FIELDS:
-                raise AttributeError(f"DiffusionRun has no field {name!r}")
-            key = f"_data_{name}"
-            if key not in self._cache:
-                self._cache[key] = [getattr(r, name) for r in self._runs]
-            return self._cache[key]
-
-    if TYPE_CHECKING:
-
-        @property
-        def domain(self) -> list[str]:
-            """Always ``"diffusion"``."""
-            ...
-
-        @property
-        def task(self) -> list[str]:
-            """Benchmark task identifier."""
-            ...
-
-        @property
-        def model_id(self) -> list[str]:
-            """Full HF model identifier."""
-            ...
-
-        @property
-        def nickname(self) -> list[str]:
-            """Human-friendly display name."""
-            ...
-
-        @property
-        def total_params_billions(self) -> list[float]:
-            """Total parameter count in billions."""
-            ...
-
-        @property
-        def activated_params_billions(self) -> list[float]:
-            """Activated parameter count in billions."""
-            ...
-
-        @property
-        def weight_precision(self) -> list[str]:
-            """Weight precision."""
-            ...
-
-        @property
-        def gpu_model(self) -> list[str]:
-            """GPU model identifier."""
-            ...
-
-        @property
-        def num_gpus(self) -> list[int]:
-            """Number of GPUs used."""
-            ...
-
-        @property
-        def batch_size(self) -> list[int]:
-            """Batch size."""
-            ...
-
-        @property
-        def inference_steps(self) -> list[int | None]:
-            """Number of diffusion inference steps."""
-            ...
-
-        @property
-        def height(self) -> list[int]:
-            """Output height in pixels."""
-            ...
-
-        @property
-        def width(self) -> list[int]:
-            """Output width in pixels."""
-            ...
-
-        @property
-        def num_frames(self) -> list[int | None]:
-            """Number of video frames."""
-            ...
-
-        @property
-        def fps(self) -> list[int | None]:
-            """Video frames per second."""
-            ...
-
-        @property
-        def ulysses_degree(self) -> list[int | None]:
-            """Ulysses sequence parallelism degree."""
-            ...
-
-        @property
-        def ring_degree(self) -> list[int | None]:
-            """Ring attention parallelism degree."""
-            ...
-
-        @property
-        def use_torch_compile(self) -> list[bool | None]:
-            """Whether torch.compile was enabled."""
-            ...
-
-        @property
-        def batch_latency_s(self) -> list[float]:
-            """Average batch latency in seconds."""
-            ...
-
-        @property
-        def avg_power_watts(self) -> list[float]:
-            """Average GPU power in watts."""
-            ...
-
-        @property
-        def energy_per_generation_joules(self) -> list[float]:
-            """Energy per generated output in joules."""
-            ...
-
-        @property
-        def throughput_generations_per_sec(self) -> list[float]:
-            """Throughput in generations per second."""
-            ...
-
-
 class LLMRuns:
     """Immutable collection of LLM benchmark runs with fluent filtering.
 
-    Supports chained filtering, grouping, iteration, and conversion to
-    DataFrames. Two data access patterns are available:
-
-    Per-record (row) -- iterate to get individual `LLMRun` objects:
+    Iterate to get individual `LLMRun` objects:
 
         for r in runs.task("gpqa"):
             print(r.energy_per_token_joules, r.nickname)
 
         best = min(runs.task("gpqa"), key=lambda r: r.energy_per_token_joules)
 
-    Per-field (column) -- use the `data` property for typed field arrays:
-
-        energies = runs.data.energy_per_token_joules  # list[float]
-        gpus = runs.data.num_gpus                     # list[int]
-
     Example:
 
         runs = LLMRuns.from_directory("/path/to/compiled/data")
         best = min(runs.stable().task("gpqa"), key=lambda r: r.energy_per_token_joules)
-        energies = runs.task("gpqa").data.energy_per_token_joules
+        energies = [r.energy_per_token_joules for r in runs.task("gpqa")]
     """
 
     def __init__(
         self,
         runs: Sequence[LLMRun],
         *,
-        _hf_source: _HFSource | None = None,
         _stable_only: bool = False,
     ) -> None:
         self._runs = tuple(runs)
         self._cache: dict[str, Any] = {}
-        self._hf_source = _hf_source
         self._stable_only = _stable_only
 
     def _derive(self, runs: Sequence[LLMRun]) -> LLMRuns:
         """Create a derived collection preserving source metadata."""
-        return LLMRuns(runs, _hf_source=self._hf_source, _stable_only=self._stable_only)
+        return LLMRuns(runs, _stable_only=self._stable_only)
 
-    def _ensure_raw_files(self) -> None:
-        """Ensure raw results files are available locally.
+    def download_raw_files(self) -> LLMRuns:
+        """Download all raw files for this collection in parallel.
 
-        When the collection was loaded from HF Hub, downloads the raw
-        files for all runs in this collection in parallel. Paths on
-        each run record are already absolute (resolved at load time),
-        so this only triggers the actual download.
-
-        Files already present in the HF Hub local cache (from previous
-        downloads, even across processes) are resolved instantly without
-        network I/O.
-        """
-        if "_raw_files" in self._cache or self._hf_source is None:
-            return
-
-        root = self._hf_source.snapshot_root
-        files: set[str] = set()
-        for run in self._runs:
-            files.add(str(Path(run.results_path).relative_to(root)))
-            if run.prometheus_path:
-                files.add(str(Path(run.prometheus_path).relative_to(root)))
-
-        if not files:
-            self._cache["_raw_files"] = True
-            return
-
-        logger.info(
-            "Downloading %d raw files from %s",
-            len(files),
-            self._hf_source.repo_id,
-        )
-        with ThreadPoolExecutor(max_workers=min(8, len(files))) as pool:
-            futures = [
-                pool.submit(
-                    download_file,
-                    self._hf_source.repo_id,
-                    f,
-                    revision=self._hf_source.revision,
-                )
-                for f in files
-            ]
-            for future in futures:
-                future.result()
-
-        self._cache["_raw_files"] = True
-
-    def prefetch(self) -> LLMRuns:
-        """Eagerly download all raw files for this collection.
-
-        When loaded from HF Hub, downloads all raw `results.json` and
-        `prometheus.json` files for every run in the collection. Useful
-        when you know you'll need all raw data and want to pay the download
-        cost upfront rather than lazily.
+        Downloads results.json and prometheus.json for every run in the
+        collection. Only useful when loaded from HF Hub; no-op for local
+        sources.
 
         The full unfiltered dataset is ~100 GB. Filter first to limit
         download size:
 
-            runs = LLMRuns.from_hf().task("gpqa").prefetch()
+            runs = LLMRuns.from_hf().task("gpqa").download_raw_files()
         """
-        self._ensure_raw_files()
+        if not self._runs:
+            return self
+        if self._runs[0].__dict__.get("_hf_repo_id") is None:
+            return self
+
+        def _dl(run: LLMRun) -> None:
+            run._ensure_downloaded("_results_path")
+            run._ensure_downloaded("_prometheus_path")
+
+        logger.info("Downloading raw files for %d runs", len(self._runs))
+        with ThreadPoolExecutor(max_workers=min(8, len(self._runs))) as pool:
+            list(pool.map(_dl, self._runs))
         return self
 
     @classmethod
@@ -1485,11 +1268,11 @@ class LLMRuns:
     ) -> LLMRuns:
         """Load runs from a compiled data directory (parquet-first).
 
-        Reads ``runs/llm.parquet`` from the compiled data repo. No raw file
+        Reads `runs/llm.parquet` from the compiled data repo. No raw file
         parsing or stability re-computation is performed.
 
         Args:
-            root: Compiled data directory containing ``runs/llm.parquet``.
+            root: Compiled data directory containing `runs/llm.parquet`.
             stable_only: If True (default), only return stable runs.
         """
         root_path = Path(root)
@@ -1527,9 +1310,11 @@ class LLMRuns:
         """
         parquet_path = download_file(repo_id, "runs/llm.parquet", revision=revision)
         snapshot_root = parquet_path.parent.parent
-        source = _HFSource(repo_id, revision, snapshot_root)
         instance = cls.from_parquet(parquet_path, base_dir=snapshot_root, stable_only=stable_only)
-        instance._hf_source = source
+        for run in instance._runs:
+            object.__setattr__(run, "_hf_repo_id", repo_id)
+            object.__setattr__(run, "_hf_revision", revision)
+            object.__setattr__(run, "_hf_snapshot_root", str(snapshot_root))
         return instance
 
     @classmethod
@@ -1544,16 +1329,23 @@ class LLMRuns:
 
         Args:
             path: Path to the parquet file.
-            base_dir: If provided, resolve relative results_path and
-                prometheus_path against this directory.
+            base_dir: If provided, resolve relative path fields against
+                this directory.
             stable_only: If True (default), only return stable runs.
         """
         df = pd.read_parquet(path)
         if stable_only and "is_stable" in df.columns:
             df = df[df["is_stable"]]
+        rename = {}
+        if "results_path" in df.columns:
+            rename["results_path"] = "_results_path"
+        if "prometheus_path" in df.columns:
+            rename["prometheus_path"] = "_prometheus_path"
+        if rename:
+            df = df.rename(columns=rename)
         if base_dir is not None:
             col_set = set(df.columns)
-            for col in ("results_path", "prometheus_path"):
+            for col in ("_results_path", "_prometheus_path"):
                 if col in col_set:
                     series: pd.Series[str] = df[col]
                     df[col] = series.apply(lambda p: str(base_dir / p) if pd.notna(p) else p)
@@ -1580,7 +1372,7 @@ class LLMRuns:
     ) -> LLMRuns:
         """Load runs from raw benchmark result directories.
 
-        Parses ``results.json`` files, computes stability, and returns
+        Parses `results.json` files, computes stability, and returns
         the filtered collection.
 
         A run is considered **unstable** if any of the following hold:
@@ -1588,7 +1380,7 @@ class LLMRuns:
         - The steady-state duration is shorter than 20 seconds.
         - The energy-per-token value is missing or non-positive.
         - The average batch utilization during steady state is below 85%
-          of the configured ``max_num_seqs``.
+          of the configured `max_num_seqs`.
         - **Cascade rule**: if any batch size for a (model, task, GPU,
           num_gpus) group is unstable, all larger batch sizes in the same
           group are also marked unstable.
@@ -1601,8 +1393,8 @@ class LLMRuns:
             tasks: If given, only load these tasks.
             config_dir: Path to LLM config directory (model_info.json, etc.).
             stable_only: If True (default), only return stable runs.
-                Pass False to include all runs; each run's ``is_stable``
-                and ``unstable_reason`` fields indicate its status.
+                Pass False to include all runs; each run's `is_stable`
+                and `unstable_reason` fields indicate its status.
             n_workers: Number of parallel workers (default: auto).
         """
         if config_dir is not None:
@@ -1628,11 +1420,11 @@ class LLMRuns:
         """Filter to runs matching any of the given tasks."""
         return self._filter("task", tasks)
 
-    def model(self, *model_ids: str) -> LLMRuns:
+    def model_id(self, *model_ids: str) -> LLMRuns:
         """Filter to runs matching any of the given model IDs."""
         return self._filter("model_id", model_ids)
 
-    def gpu(self, *gpu_models: str) -> LLMRuns:
+    def gpu_model(self, *gpu_models: str) -> LLMRuns:
         """Filter to runs matching any of the given GPU models."""
         return self._filter("gpu_model", gpu_models)
 
@@ -1652,13 +1444,13 @@ class LLMRuns:
             return self._filter_range("num_gpus", min, max)
         raise TypeError("num_gpus() requires at least one argument")
 
-    def batch(self, *sizes: int, min: int | None = None, max: int | None = None) -> LLMRuns:
-        """Filter to runs matching given batch sizes or a range.
+    def max_num_seqs(self, *sizes: int, min: int | None = None, max: int | None = None) -> LLMRuns:
+        """Filter to runs matching given max_num_seqs values or a range.
 
         Args:
-            sizes: Exact batch sizes to include.
-            min: Minimum batch size (inclusive).
-            max: Maximum batch size (inclusive).
+            sizes: Exact values to include.
+            min: Minimum value (inclusive).
+            max: Maximum value (inclusive).
         """
         if sizes and (min is not None or max is not None):
             raise ValueError("Cannot combine exact values with min/max range")
@@ -1666,7 +1458,7 @@ class LLMRuns:
             return self._filter("max_num_seqs", sizes)
         if min is not None or max is not None:
             return self._filter_range("max_num_seqs", min, max)
-        raise TypeError("batch() requires at least one argument")
+        raise TypeError("max_num_seqs() requires at least one argument")
 
     def precision(self, *prec: str) -> LLMRuns:
         """Filter to runs matching any of the given weight precisions."""
@@ -1691,7 +1483,7 @@ class LLMRuns:
         """Filter to unstable runs only.
 
         Raises:
-            ValueError: If this collection was loaded with ``stable_only=True``,
+            ValueError: If this collection was loaded with `stable_only=True`,
                 since unstable runs were already filtered out at load time.
         """
         if self._stable_only:
@@ -1732,24 +1524,6 @@ class LLMRuns:
             self._cache[key] = self._derive(filtered)
         return self._cache[key]
 
-    @property
-    def data(self) -> _LLMRunsData:
-        """Typed field accessor returning `list[T]` per field.
-
-        Provides column-oriented access to run fields with full type safety:
-
-            runs.data.energy_per_token_joules  # list[float]
-            runs.data.num_gpus                 # list[int]
-            runs.data.nickname                 # list[str]
-
-        Each property returns a plain `list` with one element per run,
-        in the same order as iteration.
-        """
-        key = "_data_accessor"
-        if key not in self._cache:
-            self._cache[key] = _LLMRunsData(self._runs, self._cache, self._ensure_raw_files)
-        return self._cache[key]
-
     def group_by(self, *fields: str) -> dict[Any, LLMRuns]:
         """Group runs by one or more fields.
 
@@ -1785,11 +1559,9 @@ class LLMRuns:
         return len(self._runs) > 0
 
     def __add__(self, other: LLMRuns) -> LLMRuns:
-        source = self._hf_source if self._hf_source == other._hf_source else None
         stable_only = self._stable_only and other._stable_only
         return LLMRuns(
             list(self._runs) + list(other._runs),
-            _hf_source=source,
             _stable_only=stable_only,
         )
 
@@ -1797,16 +1569,20 @@ class LLMRuns:
         return f"LLMRuns({len(self._runs)} runs)"
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Convert to DataFrame with one row per run."""
+        """Convert to DataFrame with one row per run.
+
+        Private fields (path fields, HF metadata) are excluded.
+        """
         if not self._runs:
             return pd.DataFrame()
-        return pd.DataFrame([dataclasses.asdict(r) for r in self._runs])
+        cols = [f.name for f in dataclasses.fields(self._runs[0]) if not f.name.startswith("_")]
+        return pd.DataFrame([{c: getattr(r, c) for c in cols} for r in self._runs])
 
     def output_lengths(self, *, include_unsuccessful: bool = False) -> pd.DataFrame:
         """Extract per-request output lengths.
 
-        When loaded from HF Hub, automatically downloads the raw files
-        needed for the current (possibly filtered) collection.
+        Calls `LLMRun.output_lengths()` on each record, which handles
+        downloading from HF Hub if needed.
 
         Args:
             include_unsuccessful: If True, include requests that failed
@@ -1814,55 +1590,27 @@ class LLMRuns:
                 Defaults to False (only successful requests).
 
         Returns:
-            DataFrame with columns: results_path, task, model_id,
-            num_gpus, max_num_seqs, output_len, success
+            DataFrame with columns: task, model_id, num_gpus,
+            max_num_seqs, output_len
 
         Raises:
             FileNotFoundError: If raw results files are not available locally
                 and the collection was not loaded from HF Hub.
         """
-        cols = [
-            "results_path",
-            "task",
-            "model_id",
-            "num_gpus",
-            "max_num_seqs",
-            "output_len",
-            "success",
-        ]
+        cols = ["task", "model_id", "num_gpus", "max_num_seqs", "output_len"]
         if not self._runs:
             return pd.DataFrame(columns=cols)
 
-        self._ensure_raw_files()
         rows: list[dict[str, Any]] = []
         for run in self._runs:
-            p = Path(run.results_path)
-            if not p.exists():
-                raise FileNotFoundError(f"Raw results file not found: {p}")
-            data = _load_json(p)
-            reqs = data.get("results")
-            if not isinstance(reqs, list):
-                raise ValueError(f"Missing required 'results' list in {p}")
-            for req in reqs:
-                success = bool(req.get("success", False))
-                if not include_unsuccessful and not success:
-                    continue
-                output_len = req.get("output_len")
-                if output_len is None:
-                    if success:
-                        raise ValueError(
-                            f"Missing required output_len for successful request in {p}"
-                        )
-                    continue
+            for length in run.output_lengths(include_unsuccessful=include_unsuccessful):
                 rows.append(
                     {
-                        "results_path": run.results_path,
                         "task": run.task,
                         "model_id": run.model_id,
                         "num_gpus": run.num_gpus,
                         "max_num_seqs": run.max_num_seqs,
-                        "output_len": int(output_len),
-                        "success": success,
+                        "output_len": length,
                     }
                 )
         return pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
@@ -1870,45 +1618,28 @@ class LLMRuns:
     def inter_token_latencies(self) -> pd.DataFrame:
         """Extract per-token inter-token latency samples.
 
-        Reads raw results files and extracts ITL values from each successful
-        request. Chunked-prefill artifacts (zero-valued ITL entries) are
-        smoothed by spreading the accumulated latency across the covered tokens.
-
-        When loaded from HF Hub, automatically downloads the raw files
-        needed for the current (possibly filtered) collection.
+        Calls `LLMRun.inter_token_latencies()` on each record, which handles
+        downloading from HF Hub if needed. Chunked-prefill artifacts
+        (zero-valued ITL entries) are smoothed by spreading the accumulated
+        latency across the covered tokens.
 
         Returns:
-            DataFrame with columns: results_path, task, model_id,
-            num_gpus, max_num_seqs, itl_s
+            DataFrame with columns: task, model_id, num_gpus,
+            max_num_seqs, itl_s
 
         Raises:
             FileNotFoundError: If raw results files are not available locally
                 and the collection was not loaded from HF Hub.
         """
-        cols = ["results_path", "task", "model_id", "num_gpus", "max_num_seqs", "itl_s"]
+        cols = ["task", "model_id", "num_gpus", "max_num_seqs", "itl_s"]
         if not self._runs:
             return pd.DataFrame(columns=cols)
 
-        self._ensure_raw_files()
         rows: list[dict[str, Any]] = []
         for run in self._runs:
-            p = Path(run.results_path)
-            if not p.exists():
-                raise FileNotFoundError(f"Raw results file not found: {p}")
-            data = _load_json(p)
-            vals: list[float] = []
-            for req in data.get("results", []):
-                if not req.get("success", False):
-                    continue
-                raw_itl = [float(x) for x in req.get("itl", [])]
-                vals.extend(_smooth_chunked_itl(raw_itl))
-            arr = [x for x in vals if x > 0 and np.isfinite(x)]
-            if not arr:
-                raise ValueError(f"No valid ITL samples in run: {run.results_path}")
-            for v in arr:
+            for v in run.inter_token_latencies():
                 rows.append(
                     {
-                        "results_path": run.results_path,
                         "task": run.task,
                         "model_id": run.model_id,
                         "num_gpus": run.num_gpus,
@@ -1918,11 +1649,17 @@ class LLMRuns:
                 )
         return pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
 
-    def timelines(self, *, metric: str = "power.device_instant") -> pd.DataFrame:
+    def timelines(
+        self,
+        *,
+        metric: Literal[
+            "power.device_instant", "power.device_average", "temperature"
+        ] = "power.device_instant",
+    ) -> pd.DataFrame:
         """Extract power/temperature timeseries.
 
-        When loaded from HF Hub, automatically downloads the raw files
-        needed for the current (possibly filtered) collection.
+        Calls `LLMRun.timelines()` on each record, which handles
+        downloading from HF Hub if needed.
 
         Args:
             metric: Which timeline to extract. Supported values:
@@ -1930,126 +1667,79 @@ class LLMRuns:
                 `"temperature"`.
 
         Returns:
-            DataFrame with columns: results_path, domain, task, model_id,
-            num_gpus, max_num_seqs, batch_size, timestamp,
-            relative_time_s, value, metric
+            DataFrame with columns: task, model_id, num_gpus,
+            max_num_seqs, timestamp, relative_time_s, value, metric
         """
-        self._ensure_raw_files()
-        records = [
-            {
-                "results_path": r.results_path,
-                "domain": r.domain,
-                "task": r.task,
-                "model_id": r.model_id,
-                "num_gpus": r.num_gpus,
-                "max_num_seqs": r.max_num_seqs,
-            }
-            for r in self._runs
+        cols = [
+            "task",
+            "model_id",
+            "num_gpus",
+            "max_num_seqs",
+            "timestamp",
+            "relative_time_s",
+            "value",
+            "metric",
         ]
-        if not records:
-            return pd.DataFrame(
-                columns=[
-                    "results_path",
-                    "domain",
-                    "task",
-                    "model_id",
-                    "num_gpus",
-                    "max_num_seqs",
-                    "batch_size",
-                    "timestamp",
-                    "relative_time_s",
-                    "value",
-                    "metric",
-                ]
-            )
-        return load_timeline_table(records, metric=metric)
+        if not self._runs:
+            return pd.DataFrame(columns=cols)
+
+        frames: list[pd.DataFrame] = []
+        for run in self._runs:
+            tl = run.timelines(metric=metric)
+            tl["task"] = run.task
+            tl["model_id"] = run.model_id
+            tl["num_gpus"] = run.num_gpus
+            tl["max_num_seqs"] = run.max_num_seqs
+            frames.append(tl)
+        if not frames:
+            return pd.DataFrame(columns=cols)
+        out = pd.concat(frames, ignore_index=True)
+        return out.sort_values(["task", "model_id", "relative_time_s"]).reset_index(drop=True)
 
 
 class DiffusionRuns:
     """Immutable collection of diffusion model benchmark runs with fluent filtering.
 
     Same collection pattern as `LLMRuns`, with diffusion-specific filters.
-    Two data access patterns are available:
 
-    Per-record (row) -- iterate to get individual `DiffusionRun` objects:
+    Iterate to get individual `DiffusionRun` objects:
 
         for r in runs.task("text-to-image"):
             print(r.energy_per_generation_joules, r.nickname)
 
-    Per-field (column) -- use the `data` property for typed field arrays:
+    Example:
 
-        powers = runs.data.avg_power_watts  # list[float]
+        runs = DiffusionRuns.from_directory("/path/to/compiled/data")
+        powers = [r.avg_power_watts for r in runs.task("text-to-image")]
     """
 
-    def __init__(
-        self, runs: Sequence[DiffusionRun], *, _hf_source: _HFSource | None = None
-    ) -> None:
+    def __init__(self, runs: Sequence[DiffusionRun]) -> None:
         self._runs = tuple(runs)
         self._cache: dict[str, Any] = {}
-        self._hf_source = _hf_source
 
     def _derive(self, runs: Sequence[DiffusionRun]) -> DiffusionRuns:
         """Create a derived collection preserving source metadata."""
-        return DiffusionRuns(runs, _hf_source=self._hf_source)
+        return DiffusionRuns(runs)
 
-    def _ensure_raw_files(self) -> None:
-        """Ensure raw results files are available locally.
+    def download_raw_files(self) -> DiffusionRuns:
+        """Download all raw files for this collection in parallel.
 
-        When the collection was loaded from HF Hub, downloads the raw
-        files for all runs in this collection in parallel. Paths on
-        each run record are already absolute (resolved at load time),
-        so this only triggers the actual download.
-
-        Files already present in the HF Hub local cache (from previous
-        downloads, even across processes) are resolved instantly without
-        network I/O.
-        """
-        if "_raw_files" in self._cache or self._hf_source is None:
-            return
-
-        root = self._hf_source.snapshot_root
-        files: set[str] = set()
-        for run in self._runs:
-            files.add(str(Path(run.results_path).relative_to(root)))
-
-        if not files:
-            self._cache["_raw_files"] = True
-            return
-
-        logger.info(
-            "Downloading %d raw files from %s",
-            len(files),
-            self._hf_source.repo_id,
-        )
-        with ThreadPoolExecutor(max_workers=min(8, len(files))) as pool:
-            futures = [
-                pool.submit(
-                    download_file,
-                    self._hf_source.repo_id,
-                    f,
-                    revision=self._hf_source.revision,
-                )
-                for f in files
-            ]
-            for future in futures:
-                future.result()
-
-        self._cache["_raw_files"] = True
-
-    def prefetch(self) -> DiffusionRuns:
-        """Eagerly download all raw files for this collection.
-
-        When loaded from HF Hub, downloads all raw `results.json` files
-        for every run in the collection. Useful when you know you'll need
-        all raw data and want to pay the download cost upfront rather than
-        lazily.
+        Downloads results.json for every run in the collection. Only
+        useful when loaded from HF Hub; no-op for local sources.
 
         The full unfiltered dataset is ~100 GB. Filter first to limit
         download size:
 
-            runs = DiffusionRuns.from_hf().task("text-to-image").prefetch()
+            runs = DiffusionRuns.from_hf().task("text-to-image").download_raw_files()
         """
-        self._ensure_raw_files()
+        if not self._runs:
+            return self
+        if self._runs[0].__dict__.get("_hf_repo_id") is None:
+            return self
+
+        logger.info("Downloading raw files for %d runs", len(self._runs))
+        with ThreadPoolExecutor(max_workers=min(8, len(self._runs))) as pool:
+            list(pool.map(lambda run: run._ensure_downloaded("_results_path"), self._runs))
         return self
 
     @classmethod
@@ -2059,10 +1749,10 @@ class DiffusionRuns:
     ) -> DiffusionRuns:
         """Load runs from a compiled data directory (parquet-first).
 
-        Reads ``runs/diffusion.parquet`` from the compiled data repo.
+        Reads `runs/diffusion.parquet` from the compiled data repo.
 
         Args:
-            root: Compiled data directory containing ``runs/diffusion.parquet``.
+            root: Compiled data directory containing `runs/diffusion.parquet`.
         """
         root_path = Path(root)
         parquet = root_path / "runs" / "diffusion.parquet"
@@ -2096,9 +1786,11 @@ class DiffusionRuns:
         """
         parquet_path = download_file(repo_id, "runs/diffusion.parquet", revision=revision)
         snapshot_root = parquet_path.parent.parent
-        source = _HFSource(repo_id, revision, snapshot_root)
         instance = cls.from_parquet(parquet_path, base_dir=snapshot_root)
-        instance._hf_source = source
+        for run in instance._runs:
+            object.__setattr__(run, "_hf_repo_id", repo_id)
+            object.__setattr__(run, "_hf_revision", revision)
+            object.__setattr__(run, "_hf_snapshot_root", str(snapshot_root))
         return instance
 
     @classmethod
@@ -2112,14 +1804,20 @@ class DiffusionRuns:
 
         Args:
             path: Path to the parquet file.
-            base_dir: If provided, resolve relative results_path against
+            base_dir: If provided, resolve relative path fields against
                 this directory.
         """
         df = pd.read_parquet(path)
-        diff_col_set = set(df.columns)
-        if base_dir is not None and "results_path" in diff_col_set:
-            rp_series: pd.Series[str] = df["results_path"]
-            df["results_path"] = rp_series.apply(lambda p: str(base_dir / p) if pd.notna(p) else p)
+        rename = {}
+        if "results_path" in df.columns:
+            rename["results_path"] = "_results_path"
+        if rename:
+            df = df.rename(columns=rename)
+        if base_dir is not None and "_results_path" in df.columns:
+            rp_series: pd.Series[str] = df["_results_path"]
+            df["_results_path"] = rp_series.apply(
+                lambda p: str(base_dir / p) if pd.notna(p) else p
+            )
         runs_list: list[DiffusionRun] = []
         records: list[dict[str, Any]] = df.to_dict(orient="records")
         for rec in records:
@@ -2142,7 +1840,7 @@ class DiffusionRuns:
     ) -> DiffusionRuns:
         """Load runs from raw benchmark result directories.
 
-        Parses ``results.json`` files and returns the collection.
+        Parses `results.json` files and returns the collection.
 
         Args:
             roots: One or more benchmark root directories (or results sub-dirs).
@@ -2172,11 +1870,11 @@ class DiffusionRuns:
         """Filter to runs matching any of the given tasks."""
         return self._filter("task", tasks)
 
-    def model(self, *model_ids: str) -> DiffusionRuns:
+    def model_id(self, *model_ids: str) -> DiffusionRuns:
         """Filter to runs matching any of the given model IDs."""
         return self._filter("model_id", model_ids)
 
-    def gpu(self, *gpu_models: str) -> DiffusionRuns:
+    def gpu_model(self, *gpu_models: str) -> DiffusionRuns:
         """Filter to runs matching any of the given GPU models."""
         return self._filter("gpu_model", gpu_models)
 
@@ -2202,7 +1900,12 @@ class DiffusionRuns:
         """Filter to runs matching any of the given nicknames."""
         return self._filter("nickname", nicknames)
 
-    def batch(self, *sizes: int, min: int | None = None, max: int | None = None) -> DiffusionRuns:
+    def batch_size(
+        self,
+        *sizes: int,
+        min: int | None = None,
+        max: int | None = None,
+    ) -> DiffusionRuns:
         """Filter to runs matching given batch sizes or a range.
 
         Args:
@@ -2216,7 +1919,7 @@ class DiffusionRuns:
             return self._filter("batch_size", sizes)
         if min is not None or max is not None:
             return self._filter_range("batch_size", min, max)
-        raise TypeError("batch() requires at least one argument")
+        raise TypeError("batch_size() requires at least one argument")
 
     def precision(self, *prec: str) -> DiffusionRuns:
         """Filter to runs matching any of the given weight precisions."""
@@ -2248,24 +1951,6 @@ class DiffusionRuns:
             if max_val is not None:
                 filtered = [r for r in filtered if getattr(r, field) <= max_val]
             self._cache[key] = self._derive(filtered)
-        return self._cache[key]
-
-    @property
-    def data(self) -> _DiffusionRunsData:
-        """Typed field accessor returning `list[T]` per field.
-
-        Provides column-oriented access to run fields with full type safety:
-
-            runs.data.avg_power_watts          # list[float]
-            runs.data.num_gpus                 # list[int]
-            runs.data.nickname                 # list[str]
-
-        Each property returns a plain `list` with one element per run,
-        in the same order as iteration.
-        """
-        key = "_data_accessor"
-        if key not in self._cache:
-            self._cache[key] = _DiffusionRunsData(self._runs, self._cache, self._ensure_raw_files)
         return self._cache[key]
 
     def group_by(self, *fields: str) -> dict[Any, DiffusionRuns]:
@@ -2303,23 +1988,32 @@ class DiffusionRuns:
         return len(self._runs) > 0
 
     def __add__(self, other: DiffusionRuns) -> DiffusionRuns:
-        source = self._hf_source if self._hf_source == other._hf_source else None
-        return DiffusionRuns(list(self._runs) + list(other._runs), _hf_source=source)
+        return DiffusionRuns(list(self._runs) + list(other._runs))
 
     def __repr__(self) -> str:
         return f"DiffusionRuns({len(self._runs)} runs)"
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Convert to DataFrame with one row per run."""
+        """Convert to DataFrame with one row per run.
+
+        Private fields (path fields, HF metadata) are excluded.
+        """
         if not self._runs:
             return pd.DataFrame()
-        return pd.DataFrame([dataclasses.asdict(r) for r in self._runs])
+        cols = [f.name for f in dataclasses.fields(self._runs[0]) if not f.name.startswith("_")]
+        return pd.DataFrame([{c: getattr(r, c) for c in cols} for r in self._runs])
 
-    def timelines(self, *, metric: str = "power.device_instant") -> pd.DataFrame:
+    def timelines(
+        self,
+        *,
+        metric: Literal[
+            "power.device_instant", "power.device_average", "temperature"
+        ] = "power.device_instant",
+    ) -> pd.DataFrame:
         """Extract power/temperature timeseries.
 
-        When loaded from HF Hub, automatically downloads the raw files
-        needed for the current (possibly filtered) collection.
+        Calls `DiffusionRun.timelines()` on each record, which handles
+        downloading from HF Hub if needed.
 
         Args:
             metric: Which timeline to extract. Supported values:
@@ -2327,36 +2021,31 @@ class DiffusionRuns:
                 `"temperature"`.
 
         Returns:
-            DataFrame with columns: results_path, domain, task, model_id,
-            num_gpus, max_num_seqs, batch_size, timestamp,
-            relative_time_s, value, metric
+            DataFrame with columns: task, model_id, num_gpus,
+            batch_size, timestamp, relative_time_s, value, metric
         """
-        self._ensure_raw_files()
-        records = [
-            {
-                "results_path": r.results_path,
-                "domain": r.domain,
-                "task": r.task,
-                "model_id": r.model_id,
-                "num_gpus": r.num_gpus,
-                "batch_size": r.batch_size,
-            }
-            for r in self._runs
+        cols = [
+            "task",
+            "model_id",
+            "num_gpus",
+            "batch_size",
+            "timestamp",
+            "relative_time_s",
+            "value",
+            "metric",
         ]
-        if not records:
-            return pd.DataFrame(
-                columns=[
-                    "results_path",
-                    "domain",
-                    "task",
-                    "model_id",
-                    "num_gpus",
-                    "max_num_seqs",
-                    "batch_size",
-                    "timestamp",
-                    "relative_time_s",
-                    "value",
-                    "metric",
-                ]
-            )
-        return load_timeline_table(records, metric=metric)
+        if not self._runs:
+            return pd.DataFrame(columns=cols)
+
+        frames: list[pd.DataFrame] = []
+        for run in self._runs:
+            tl = run.timelines(metric=metric)
+            tl["task"] = run.task
+            tl["model_id"] = run.model_id
+            tl["num_gpus"] = run.num_gpus
+            tl["batch_size"] = run.batch_size
+            frames.append(tl)
+        if not frames:
+            return pd.DataFrame(columns=cols)
+        out = pd.concat(frames, ignore_index=True)
+        return out.sort_values(["task", "model_id", "relative_time_s"]).reset_index(drop=True)
