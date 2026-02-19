@@ -1,7 +1,7 @@
 # The ML.ENERGY Benchmark V3 Dataset
 
 This dataset contains benchmark results from [The ML.ENERGY Benchmark](https://github.com/ml-energy/benchmark), which includes LLM and diffusion inference runs on NVIDIA H100 and B200 GPUs.
-You can use [The ML.ENERGY Leaderboard](https://ml.energy) to explore the benchmarking results.
+You can use [The ML.ENERGY Leaderboard](https://ml.energy/leaderboard) to explore the benchmarking results.
 
 ## Subsets
 
