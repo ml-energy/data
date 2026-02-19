@@ -40,9 +40,6 @@ plugins:
   - social:
       enabled: !ENV [BUILD_SOCIAL_CARD, false]
       cards_dir: assets/img/social
-      # cards_layout_options:
-      #   background_color: "#f7e96d"
-      #   color: "#231f20"
   - mkdocstrings:
       handlers:
         python:
