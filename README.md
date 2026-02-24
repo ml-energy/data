@@ -9,8 +9,8 @@ This repository contains the toolkit code, not the data itself.
 ## What the toolkit does
 
 - **Load and filter benchmark runs** with typed, immutable collection classes (`LLMRuns`, `DiffusionRuns`).
-- **Extract bulk data** — power timelines, ITL samples, output lengths — as DataFrames.
-- **Fit models** — logistic power/latency curves, ITL latency distributions.
+- **Extract bulk data** (power timelines, ITL samples, output lengths) as DataFrames.
+- **Fit models**: logistic power/latency curves, ITL latency distributions.
 - **Build data packages** for publishing to Hugging Face Hub.
 
 ## Installation
@@ -66,8 +66,8 @@ for arch, group in runs.task("gpqa").gpu_model("B200").group_by("architecture").
 
 See the full [documentation site](https://ml.energy/data/) for:
 
-- [Usage guide](https://ml.energy/data/guide/) — progressive walkthrough from loading data to fitting models.
-- [API reference](https://ml.energy/data/api/records/) — auto-generated from docstrings.
+- [Usage guide](https://ml.energy/data/guide/): progressive walkthrough from loading data to fitting models.
+- [API reference](https://ml.energy/data/api/records/): auto-generated from docstrings.
 
 ## Citation
 

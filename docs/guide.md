@@ -8,7 +8,7 @@ For full working examples of the toolkit in production, see:
 |---------|-------------|-------|
 | [The ML.ENERGY Leaderboard](https://ml.energy/leaderboard) | Builds the leaderboard JSON data from benchmark runs | [Link](https://github.com/ml-energy/leaderboard/blob/master/scripts/build_data.py) |
 | [The ML.ENERGY Blog](https://ml.energy/blog/measurement/energy/diagnosing-inference-energy-consumption-with-the-mlenergy-leaderboard-v30/) | Analysis for the blog post on the V3 benchmark results | [Link](https://github.com/ml-energy/blog/blob/master/analysis/ml-energy-leaderboard-v3.0.py) |
-| [OpenG2G Simulation](https://gpu2grid.io/openg2g/) | Power traces and models for datacenter–grid simulation | [Link](https://github.com/gpu2grid/openg2g/blob/master/data/offline/build_mlenergy_data.py) |
+| [OpenG2G Simulation](https://gpu2grid.io/openg2g/) | Power traces and models for datacenter-grid simulation | [Link](https://github.com/gpu2grid/openg2g/blob/master/data/offline/build_mlenergy_data.py) |
 
 
 ## Dataset Access
@@ -48,7 +48,7 @@ diff = DiffusionRuns.from_directory(root)
 
 ## Filtering
 
-All filter methods return a new collection — chain freely:
+All filter methods return a new collection; chain freely:
 
 ```python
 # Single filter
@@ -130,7 +130,7 @@ for (model, batch), g in runs.group_by("model_id", "max_num_seqs").items():
 
 ## Analysis Patterns
 
-Python is the analysis layer — no special helper functions needed:
+Python is the analysis layer. No special helper functions needed:
 
 ```python
 # Compare GPU generations on a task
