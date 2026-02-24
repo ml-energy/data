@@ -30,6 +30,7 @@ theme:
     - announce.dismiss
 
 nav:
+  - Home: index.md
   - Toolkit Guide: guide.md
   - API Reference:
       - Records: api/records.md
