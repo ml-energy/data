@@ -59,7 +59,7 @@ for arch, group in runs.task("gpqa").gpu_model("B200").group_by("architecture").
 ## Who uses it
 
 - [**The ML.ENERGY Leaderboard v3.0**](https://ml.energy/leaderboard): Benchmark results are loaded and compiled into the leaderboard web app data format.
-- [**OpenG2G**](TODO): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
+- [**OpenG2G**](https://gpu2grid.io/openg2g/): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
 - [**The ML.ENERGY blog**](https://ml.energy/blog): Analysis scripts for blog posts.
 
 ## Documentation

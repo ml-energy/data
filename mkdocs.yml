@@ -37,6 +37,7 @@ nav:
 
 plugins:
   - search
+  - htmlproofer
   - social:
       enabled: !ENV [BUILD_SOCIAL_CARD, false]
       cards_dir: assets/img/social

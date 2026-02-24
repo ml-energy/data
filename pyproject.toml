@@ -37,7 +37,7 @@ Issues = "https://github.com/ml-energy/data/issues"
 [dependency-groups]
 test = ["pytest", "pytest-examples", "matplotlib"]
 lint = ["ruff", "ty"]
-docs = ["mkdocs-material[imaging]", "mkdocstrings[python]"]
+docs = ["mkdocs-material[imaging]", "mkdocstrings[python]", "mkdocs-htmlproofer-plugin"]
 dev = [{include-group = "test"}, {include-group = "lint"}, {include-group = "docs"}]
 
 [tool.setuptools.dynamic]

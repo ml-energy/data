@@ -23,6 +23,6 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --group docs
-      - run: uv run mkdocs gh-deploy --force
+      - run: uv run mkdocs gh-deploy --force --strict
         env:
           BUILD_SOCIAL_CARD: true
