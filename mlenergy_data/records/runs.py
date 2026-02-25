@@ -1233,7 +1233,10 @@ class LLMRuns:
         """Create a derived collection preserving source metadata."""
         return LLMRuns(runs, _stable_only=self._stable_only)
 
-    def download_raw_files(self) -> LLMRuns:
+    def download_raw_files(
+        self,
+        file: Literal["results", "prometheus"] | None = None,
+    ) -> LLMRuns:
         """Download all raw files for this collection in parallel.
 
         Downloads results.json and prometheus.json for every run in the
@@ -1244,6 +1247,10 @@ class LLMRuns:
         download size:
 
             runs = LLMRuns.from_hf().task("gpqa").download_raw_files()
+
+        Args:
+            file: If specified, only download this file type. Otherwise,
+                download both `results.json` and `prometheus.json`.
         """
         if not self._runs:
             return self
@@ -1251,8 +1258,10 @@ class LLMRuns:
             return self
 
         def _dl(run: LLMRun) -> None:
-            run._ensure_downloaded("_results_path")
-            run._ensure_downloaded("_prometheus_path")
+            if file in (None, "results"):
+                run._ensure_downloaded("_results_path")
+            if file in (None, "prometheus"):
+                run._ensure_downloaded("_prometheus_path")
 
         logger.info("Downloading raw files for %d runs", len(self._runs))
         with ThreadPoolExecutor(max_workers=min(8, len(self._runs))) as pool:
