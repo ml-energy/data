@@ -1,0 +1,5093 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Datasets published by ML.ENERGY and toolkits for working with them.">
+      
+      
+      
+        <link rel="canonical" href="https://ml.energy/data/api/records/">
+      
+      
+        <link rel="prev" href="../../guide/">
+      
+      
+        <link rel="next" href="../modeling/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Records - The ML.ENERGY Data & Toolkit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-C013T57GV2"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-C013T57GV2",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-C013T57GV2",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+  
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Records - The ML.ENERGY Data & Toolkit" />
+<meta property="og:description" content="Datasets published by ML.ENERGY and toolkits for working with them." />
+<meta property="og:image" content="https://ml.energy/data/assets/img/social/api/records.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://ml.energy/data/api/records/" />
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:title" content="Records - The ML.ENERGY Data & Toolkit" />
+<meta property="twitter:description" content="Datasets published by ML.ENERGY and toolkits for working with them." />
+<meta property="twitter:image" content="https://ml.energy/data/assets/img/social/api/records.png" />
+</head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#records-api" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+  We're sharing updates via <a href="https://buttondown.com/ml-energy">The ML.ENERGY Newsletter</a>!
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="The ML.ENERGY Data &amp; Toolkit" class="md-header__button md-logo" aria-label="The ML.ENERGY Data & Toolkit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1.25c2.487 0 4.773.402 6.466 1.079.844.337 1.577.758 2.112 1.264.536.507.922 1.151.922 1.907v12.987l-.026.013h.026c0 .756-.386 1.4-.922 1.907-.535.506-1.268.927-2.112 1.264-1.693.677-3.979 1.079-6.466 1.079s-4.774-.402-6.466-1.079c-.844-.337-1.577-.758-2.112-1.264C2.886 19.9 2.5 19.256 2.5 18.5h.026l-.026-.013V5.5c0-.756.386-1.4.922-1.907.535-.506 1.268-.927 2.112-1.264C7.226 1.652 9.513 1.25 12 1.25M4 14.371v4.116l-.013.013H4c0 .211.103.487.453.817.351.332.898.666 1.638.962 1.475.589 3.564.971 5.909.971s4.434-.381 5.909-.971c.739-.296 1.288-.63 1.638-.962.349-.33.453-.607.453-.817h.013L20 18.487v-4.116a8 8 0 0 1-1.534.8c-1.693.677-3.979 1.079-6.466 1.079s-4.774-.402-6.466-1.079a8 8 0 0 1-1.534-.8M20 12V7.871a8 8 0 0 1-1.534.8C16.773 9.348 14.487 9.75 12 9.75s-4.774-.402-6.466-1.079A8 8 0 0 1 4 7.871V12c0 .21.104.487.453.817.35.332.899.666 1.638.961 1.475.59 3.564.972 5.909.972s4.434-.382 5.909-.972c.74-.295 1.287-.629 1.638-.96.35-.33.453-.607.453-.818M4 5.5c0 .211.103.487.453.817.351.332.898.666 1.638.962 1.475.589 3.564.971 5.909.971s4.434-.381 5.909-.971c.739-.296 1.288-.63 1.638-.962.349-.33.453-.607.453-.817 0-.211-.103-.487-.453-.817-.351-.332-.898-.666-1.638-.962-1.475-.589-3.564-.971-5.909-.971s-4.434.381-5.909.971c-.739.296-1.288.63-1.638.962C4.104 5.013 4 5.29 4 5.5"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            The ML.ENERGY Data & Toolkit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Records
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ml-energy/data" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ml-energy/data
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="The ML.ENERGY Data &amp; Toolkit" class="md-nav__button md-logo" aria-label="The ML.ENERGY Data & Toolkit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1.25c2.487 0 4.773.402 6.466 1.079.844.337 1.577.758 2.112 1.264.536.507.922 1.151.922 1.907v12.987l-.026.013h.026c0 .756-.386 1.4-.922 1.907-.535.506-1.268.927-2.112 1.264-1.693.677-3.979 1.079-6.466 1.079s-4.774-.402-6.466-1.079c-.844-.337-1.577-.758-2.112-1.264C2.886 19.9 2.5 19.256 2.5 18.5h.026l-.026-.013V5.5c0-.756.386-1.4.922-1.907.535-.506 1.268-.927 2.112-1.264C7.226 1.652 9.513 1.25 12 1.25M4 14.371v4.116l-.013.013H4c0 .211.103.487.453.817.351.332.898.666 1.638.962 1.475.589 3.564.971 5.909.971s4.434-.381 5.909-.971c.739-.296 1.288-.63 1.638-.962.349-.33.453-.607.453-.817h.013L20 18.487v-4.116a8 8 0 0 1-1.534.8c-1.693.677-3.979 1.079-6.466 1.079s-4.774-.402-6.466-1.079a8 8 0 0 1-1.534-.8M20 12V7.871a8 8 0 0 1-1.534.8C16.773 9.348 14.487 9.75 12 9.75s-4.774-.402-6.466-1.079A8 8 0 0 1 4 7.871V12c0 .21.104.487.453.817.35.332.899.666 1.638.961 1.475.59 3.564.972 5.909.972s4.434-.382 5.909-.972c.74-.295 1.287-.629 1.638-.96.35-.33.453-.607.453-.818M4 5.5c0 .211.103.487.453.817.351.332.898.666 1.638.962 1.475.589 3.564.971 5.909.971s4.434-.381 5.909-.971c.739-.296 1.288-.63 1.638-.962.349-.33.453-.607.453-.817 0-.211-.103-.487-.453-.817-.351-.332-.898-.666-1.638-.962-1.475-.589-3.564-.971-5.909-.971s-4.434.381-5.909.971c-.739.296-1.288.63-1.638.962C4.104 5.013 4 5.29 4 5.5"/></svg>
+
+    </a>
+    The ML.ENERGY Data & Toolkit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ml-energy/data" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ml-energy/data
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Toolkit Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Records
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#llmrun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMRun
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMRun
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLMRun">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.read_results_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_results_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.read_prometheus_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_prometheus_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.output_lengths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output_lengths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.inter_token_latencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inter_token_latencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.timelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        timelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#llmruns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMRuns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMRuns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLMRuns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.download_raw_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        download_raw_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.from_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.from_hf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_hf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.from_parquet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_parquet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.from_raw_results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_raw_results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.model_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.gpu_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gpu_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.num_gpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        num_gpus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.max_num_seqs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_num_seqs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.nickname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nickname
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.stable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.unstable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unstable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.group_by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        group_by
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.to_dataframe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_dataframe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.output_lengths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output_lengths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.inter_token_latencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inter_token_latencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.timelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        timelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diffusionrun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DiffusionRun
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DiffusionRun
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DiffusionRun">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun.is_text_to_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        is_text_to_image
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun.is_text_to_video" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        is_text_to_video
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun.read_results_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_results_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun.timelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        timelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diffusionruns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DiffusionRuns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DiffusionRuns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DiffusionRuns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.download_raw_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        download_raw_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.from_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.from_hf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_hf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.from_parquet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_parquet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.from_raw_results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_raw_results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.model_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.gpu_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gpu_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.num_gpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        num_gpus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.nickname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nickname
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.batch_size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        batch_size
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.group_by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        group_by
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.to_dataframe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_dataframe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.timelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        timelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modeling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modeling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#llmrun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMRun
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMRun
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLMRun">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.read_results_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_results_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.read_prometheus_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_prometheus_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.output_lengths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output_lengths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.inter_token_latencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inter_token_latencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRun.timelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        timelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#llmruns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMRuns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLMRuns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLMRuns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.download_raw_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        download_raw_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.from_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.from_hf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_hf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.from_parquet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_parquet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.from_raw_results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_raw_results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.model_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.gpu_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gpu_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.num_gpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        num_gpus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.max_num_seqs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_num_seqs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.nickname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nickname
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.stable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.unstable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unstable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.group_by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        group_by
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.to_dataframe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_dataframe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.output_lengths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output_lengths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.inter_token_latencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inter_token_latencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.LLMRuns.timelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        timelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diffusionrun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DiffusionRun
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DiffusionRun
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DiffusionRun">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun.is_text_to_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        is_text_to_image
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun.is_text_to_video" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        is_text_to_video
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun.read_results_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_results_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRun.timelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        timelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diffusionruns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DiffusionRuns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DiffusionRuns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DiffusionRuns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.download_raw_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        download_raw_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.from_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.from_hf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_hf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.from_parquet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_parquet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.from_raw_results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_raw_results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.model_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.gpu_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gpu_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.num_gpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        num_gpus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.nickname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nickname
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.batch_size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        batch_size
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.group_by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        group_by
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.to_dataframe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_dataframe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlenergy_data.records.runs.DiffusionRuns.timelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        timelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="records-api">Records API</h1>
+<p>Typed collection classes for benchmark runs.</p>
+<h2 id="llmrun">LLMRun</h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="mlenergy_data.records.runs.LLMRun" class="doc doc-heading">
+            <code>mlenergy_data.records.runs.LLMRun</code>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents first">
+
+
+
+        <p>A single LLM benchmark run.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.domain">domain</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Always <code>"llm"</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.task">task</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Benchmark task (e.g. <code>"gpqa"</code>, <code>"lm-arena-chat"</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.model_id">model_id</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Full HF model identifier (e.g. <code>"meta-llama/Llama-3.1-8B-Instruct"</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.nickname">nickname</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Human-friendly display name from <code>model_info.json</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.architecture">architecture</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Model architecture (<code>"Dense"</code> or <code>"MoE"</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.total_params_billions">total_params_billions</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Total parameter count in billions.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.activated_params_billions">activated_params_billions</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Activated parameter count in billions (equals total for dense).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.weight_precision">weight_precision</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight precision (e.g. <code>"bfloat16"</code>, <code>"fp8"</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.gpu_model">gpu_model</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>GPU model identifier (e.g. <code>"H100"</code>, <code>"B200"</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.num_gpus">num_gpus</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of GPUs used.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.max_num_seqs">max_num_seqs</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum concurrent sequences (batch size).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.seed">seed</span></code></td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Random seed used for the benchmark run.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.num_request_repeats">num_request_repeats</span></code></td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of request repetitions.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.tensor_parallel">tensor_parallel</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tensor parallelism degree.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.expert_parallel">expert_parallel</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Expert parallelism degree.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.data_parallel">data_parallel</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Data parallelism degree.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.steady_state_energy_joules">steady_state_energy_joules</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Total GPU energy during steady state in joules.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.steady_state_duration_seconds">steady_state_duration_seconds</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Duration of steady state in seconds.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.energy_per_token_joules">energy_per_token_joules</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Steady-state energy per output token in joules.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.energy_per_request_joules">energy_per_request_joules</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Estimated energy per request in joules.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.output_throughput_tokens_per_sec">output_throughput_tokens_per_sec</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Steady-state output throughput in tokens/second.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.request_throughput_req_per_sec">request_throughput_req_per_sec</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Steady-state request throughput in requests/second.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.avg_power_watts">avg_power_watts</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Average GPU power during steady state in watts.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.total_output_tokens">total_output_tokens</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Total output tokens generated (over full benchmark).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.completed_requests">completed_requests</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of completed requests (over full benchmark).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.avg_output_len">avg_output_len</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Average output length in tokens.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.mean_itl_ms">mean_itl_ms</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Mean inter-token latency in milliseconds.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.median_itl_ms">median_itl_ms</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Median inter-token latency in milliseconds.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.p50_itl_ms">p50_itl_ms</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>50th percentile inter-token latency in milliseconds.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.p90_itl_ms">p90_itl_ms</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>90th percentile inter-token latency in milliseconds.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.p95_itl_ms">p95_itl_ms</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>95th percentile inter-token latency in milliseconds.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.p99_itl_ms">p99_itl_ms</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>99th percentile inter-token latency in milliseconds.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.avg_batch_size">avg_batch_size</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Average concurrent sequences during steady state (from Prometheus).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.is_stable">is_stable</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether this run passed stability checks.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.LLMRun.unstable_reason">unstable_reason</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reason for instability (empty if stable).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRun.read_results_json" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">read_results_json</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Download (if needed) and return parsed results.json.</p>
+<p>Caches the parsed dict per instance so repeated calls are free.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRun.read_prometheus_json" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">read_prometheus_json</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Download (if needed) and return parsed prometheus.json.</p>
+<p>Caches the parsed dict per instance so repeated calls are free.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRun.output_lengths" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">output_lengths</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">include_unsuccessful</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return per-request output token lengths from results.json.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>include_unsuccessful</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, include requests that failed
+during benchmarking. Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRun.inter_token_latencies" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">inter_token_latencies</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return inter-token latency samples in seconds from results.json.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRun.timelines" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">timelines</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;power.device_instant&#39;</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return power/temperature timeseries for this run.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>metric</code>
+            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;power.device_instant&#39;, &#39;power.device_average&#39;, &#39;temperature&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which timeline to extract. Supported values:
+<code>"power.device_instant"</code>, <code>"power.device_average"</code>,
+<code>"temperature"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;power.device_instant&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DataFrame with columns: timestamp, relative_time_s, value, metric.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="llmruns">LLMRuns</h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="mlenergy_data.records.runs.LLMRuns" class="doc doc-heading">
+            <code>mlenergy_data.records.runs.LLMRuns</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents first">
+
+
+
+        <p>Immutable collection of LLM benchmark runs with fluent filtering.</p>
+<p>Iterate to get individual <code>LLMRun</code> objects:</p>
+<div class="highlight"><pre><span></span><code>for r in runs.task(&quot;gpqa&quot;):
+    print(r.energy_per_token_joules, r.nickname)
+
+best = min(runs.task(&quot;gpqa&quot;), key=lambda r: r.energy_per_token_joules)
+</code></pre></div>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code>runs = LLMRuns.from_directory(&quot;/path/to/compiled/data&quot;)
+best = min(runs.stable().task(&quot;gpqa&quot;), key=lambda r: r.energy_per_token_joules)
+energies = [r.energy_per_token_joules for r in runs.task(&quot;gpqa&quot;)]
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.download_raw_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">download_raw_files</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Download all raw files for this collection in parallel.</p>
+<p>Downloads results.json and prometheus.json for every run in the
+collection. Only useful when loaded from HF Hub; no-op for local
+sources.</p>
+<p>The full unfiltered dataset is ~100 GB. Filter first to limit
+download size:</p>
+<div class="highlight"><pre><span></span><code>runs = LLMRuns.from_hf().task(&quot;gpqa&quot;).download_raw_files()
+</code></pre></div>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>file</code>
+            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;results&#39;, &#39;prometheus&#39;] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If specified, only download this file type. Otherwise,
+download both <code>results.json</code> and <code>prometheus.json</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.from_directory" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_directory</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">stable_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load runs from a compiled data directory (parquet-first).</p>
+<p>Reads <code>runs/llm.parquet</code> from the compiled data repo. No raw file
+parsing or stability re-computation is performed.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>root</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Compiled data directory containing <code>runs/llm.parquet</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>stable_only</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True (default), only return stable runs.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.from_hf" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_hf</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="s1">&#39;ml-energy/benchmark-v3&#39;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">revision</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stable_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load LLM runs from a Hugging Face dataset repository.</p>
+<p>The default dataset is gated. Before calling this method:</p>
+<ol>
+<li>Visit https://huggingface.co/datasets/ml-energy/benchmark-v3
+   and request access (granted automatically).</li>
+<li>Set the <code>HF_TOKEN</code> environment variable to a Hugging Face
+   access token.</li>
+</ol>
+<p>Downloads only the parquet summary file (~few MB). Methods that
+need raw data (output_lengths(), timelines(), inter_token_latencies())
+will automatically download the required files on first access.</p>
+<p>Respects the <code>HF_HOME</code> environment variable for cache location.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>repo_id</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>HF dataset repository ID.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;ml-energy/benchmark-v3&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>revision</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Git revision (branch, tag, or commit hash).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>stable_only</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True (default), only return stable runs.
+See from_raw_results for the definition of stability.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.from_parquet" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_parquet</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stable_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct LLMRuns from a pre-built parquet file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>path</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to the parquet file.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>base_dir</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If provided, resolve relative path fields against
+this directory.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>stable_only</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True (default), only return stable runs.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.from_raw_results" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_raw_results</span><span class="p">(</span><span class="o">*</span><span class="n">roots</span><span class="p">,</span> <span class="n">tasks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stable_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_workers</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load runs from raw benchmark result directories.</p>
+<p>Parses <code>results.json</code> files, computes stability, and returns
+the filtered collection.</p>
+<p>A run is considered <strong>unstable</strong> if any of the following hold:</p>
+<ul>
+<li>The steady-state duration is shorter than 20 seconds.</li>
+<li>The energy-per-token value is missing or non-positive.</li>
+<li>The average batch utilization during steady state is below 85%
+  of the configured <code>max_num_seqs</code>.</li>
+<li><strong>Cascade rule</strong>: if any batch size for a (model, task, GPU,
+  num_gpus) group is unstable, all larger batch sizes in the same
+  group are also marked unstable.</li>
+</ul>
+<p>Stability is computed jointly across all roots so the cascade
+rule works cross-root.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>roots</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One or more benchmark root directories (or results sub-dirs).</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tasks</code>
+            </td>
+            <td>
+                  <code><span title="set">set</span>[<span title="str">str</span>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If given, only load these tasks.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>config_dir</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to LLM config directory (model_info.json, etc.).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>stable_only</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True (default), only return stable runs.
+Pass False to include all runs; each run's <code>is_stable</code>
+and <code>unstable_reason</code> fields indicate its status.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n_workers</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of parallel workers (default: auto).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.task" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">task</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given tasks.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.model_id" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">model_id</span><span class="p">(</span><span class="o">*</span><span class="n">model_ids</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given model IDs.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.gpu_model" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">gpu_model</span><span class="p">(</span><span class="o">*</span><span class="n">gpu_models</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given GPU models.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.num_gpus" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">num_gpus</span><span class="p">(</span><span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching given GPU counts or a range.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>counts</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact GPU counts to include.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>min</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum GPU count (inclusive).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>max</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum GPU count (inclusive).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.max_num_seqs" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">max_num_seqs</span><span class="p">(</span><span class="o">*</span><span class="n">sizes</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching given max_num_seqs values or a range.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>sizes</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact values to include.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>min</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum value (inclusive).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>max</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum value (inclusive).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.precision" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">precision</span><span class="p">(</span><span class="o">*</span><span class="n">prec</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given weight precisions.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.architecture" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">architecture</span><span class="p">(</span><span class="o">*</span><span class="n">arch</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given architectures.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.nickname" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">nickname</span><span class="p">(</span><span class="o">*</span><span class="n">nicknames</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given nicknames.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.stable" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">stable</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to stable runs only.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.unstable" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">unstable</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to unstable runs only.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If this collection was loaded with <code>stable_only=True</code>,
+since unstable runs were already filtered out at load time.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.where" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">where</span><span class="p">(</span><span class="n">predicate</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter runs by an arbitrary predicate.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>predicate</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<a class="autorefs autorefs-internal" title="mlenergy_data.records.runs.LLMRun
+
+
+  
+      dataclass
+  " href="#mlenergy_data.records.runs.LLMRun">LLMRun</a>], <span title="bool">bool</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Function that takes an <code>LLMRun</code> and returns True to keep it.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.group_by" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">group_by</span><span class="p">(</span><span class="o">*</span><span class="n">fields</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Group runs by one or more fields.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>fields</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One or more <code>LLMRun</code> field names to group by.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span>[<span title="typing.Any">Any</span>, <a class="autorefs autorefs-internal" title="mlenergy_data.records.runs.LLMRuns" href="#mlenergy_data.records.runs.LLMRuns">LLMRuns</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Single field: <code>{value: LLMRuns, ...}</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span>[<span title="typing.Any">Any</span>, <a class="autorefs autorefs-internal" title="mlenergy_data.records.runs.LLMRuns" href="#mlenergy_data.records.runs.LLMRuns">LLMRuns</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Multiple fields: <code>{(v1, v2, ...): LLMRuns, ...}</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.to_dataframe" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">to_dataframe</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert to DataFrame with one row per run.</p>
+<p>Private fields (path fields, HF metadata) are excluded.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.output_lengths" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">output_lengths</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">include_unsuccessful</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract per-request output lengths.</p>
+<p>Calls <code>LLMRun.output_lengths()</code> on each record, which handles
+downloading from HF Hub if needed.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>include_unsuccessful</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, include requests that failed
+during benchmarking (<code>success=False</code> in <code>results.json</code>).
+Defaults to False (only successful requests).</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DataFrame with columns: task, model_id, num_gpus,</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>max_num_seqs, output_len</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="FileNotFoundError">FileNotFoundError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If raw results files are not available locally
+and the collection was not loaded from HF Hub.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.inter_token_latencies" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">inter_token_latencies</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract per-token inter-token latency samples.</p>
+<p>Calls <code>LLMRun.inter_token_latencies()</code> on each record, which handles
+downloading from HF Hub if needed. Chunked-prefill artifacts
+(zero-valued ITL entries) are smoothed by spreading the accumulated
+latency across the covered tokens.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DataFrame with columns: task, model_id, num_gpus,</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>max_num_seqs, itl_s</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="FileNotFoundError">FileNotFoundError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If raw results files are not available locally
+and the collection was not loaded from HF Hub.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.LLMRuns.timelines" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">timelines</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;power.device_instant&#39;</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract power/temperature timeseries.</p>
+<p>Calls <code>LLMRun.timelines()</code> on each record, which handles
+downloading from HF Hub if needed.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>metric</code>
+            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;power.device_instant&#39;, &#39;power.device_average&#39;, &#39;temperature&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which timeline to extract. Supported values:
+<code>"power.device_instant"</code>, <code>"power.device_average"</code>,
+<code>"temperature"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;power.device_instant&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DataFrame with columns: task, model_id, num_gpus,</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>max_num_seqs, timestamp, relative_time_s, value, metric</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="diffusionrun">DiffusionRun</h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="mlenergy_data.records.runs.DiffusionRun" class="doc doc-heading">
+            <code>mlenergy_data.records.runs.DiffusionRun</code>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents first">
+
+
+
+        <p>A single diffusion model benchmark run.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.domain">domain</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Always <code>"diffusion"</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.task">task</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Benchmark task (<code>"text-to-image"</code> or <code>"text-to-video"</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.model_id">model_id</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Full HF model identifier.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.nickname">nickname</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Human-friendly display name from <code>model_info.json</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.total_params_billions">total_params_billions</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Total parameter count in billions.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.activated_params_billions">activated_params_billions</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Activated parameter count in billions.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.weight_precision">weight_precision</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight precision (e.g. <code>"bfloat16"</code>, <code>"fp8"</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.gpu_model">gpu_model</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>GPU model identifier (e.g. <code>"H100"</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.num_gpus">num_gpus</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of GPUs used.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.batch_size">batch_size</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Batch size.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.inference_steps">inference_steps</span></code></td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of diffusion inference steps.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.height">height</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Output height in pixels.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.width">width</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Output width in pixels.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.num_frames">num_frames</span></code></td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of video frames (<code>None</code> for images).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.fps">fps</span></code></td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Video frames per second (<code>None</code> for images).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.ulysses_degree">ulysses_degree</span></code></td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Ulysses sequence parallelism degree.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.ring_degree">ring_degree</span></code></td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Ring attention parallelism degree.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.use_torch_compile">use_torch_compile</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether torch.compile was enabled.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.batch_latency_s">batch_latency_s</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Average batch latency in seconds.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.avg_power_watts">avg_power_watts</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Average GPU power in watts.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.energy_per_generation_joules">energy_per_generation_joules</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Energy per generated output (image or video) in joules.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlenergy_data.records.runs.DiffusionRun.throughput_generations_per_sec">throughput_generations_per_sec</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Throughput in generations per second.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRun.is_text_to_image" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">is_text_to_image</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Whether this is a text-to-image run.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRun.is_text_to_video" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">is_text_to_video</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Whether this is a text-to-video run.</p>
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRun.read_results_json" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">read_results_json</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Download (if needed) and return parsed results.json.</p>
+<p>Caches the parsed dict per instance so repeated calls are free.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRun.timelines" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">timelines</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;power.device_instant&#39;</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return power/temperature timeseries for this run.</p>
+<p>Diffusion runs do not have steady-state bounds, so the full
+timeline is returned.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>metric</code>
+            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;power.device_instant&#39;, &#39;power.device_average&#39;, &#39;temperature&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which timeline to extract. Supported values:
+<code>"power.device_instant"</code>, <code>"power.device_average"</code>,
+<code>"temperature"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;power.device_instant&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DataFrame with columns: timestamp, relative_time_s, value, metric.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="diffusionruns">DiffusionRuns</h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="mlenergy_data.records.runs.DiffusionRuns" class="doc doc-heading">
+            <code>mlenergy_data.records.runs.DiffusionRuns</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents first">
+
+
+
+        <p>Immutable collection of diffusion model benchmark runs with fluent filtering.</p>
+<p>Same collection pattern as <code>LLMRuns</code>, with diffusion-specific filters.</p>
+<p>Iterate to get individual <code>DiffusionRun</code> objects:</p>
+<div class="highlight"><pre><span></span><code>for r in runs.task(&quot;text-to-image&quot;):
+    print(r.energy_per_generation_joules, r.nickname)
+</code></pre></div>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code>runs = DiffusionRuns.from_directory(&quot;/path/to/compiled/data&quot;)
+powers = [r.avg_power_watts for r in runs.task(&quot;text-to-image&quot;)]
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.download_raw_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">download_raw_files</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Download all raw files for this collection in parallel.</p>
+<p>Downloads results.json for every run in the collection. Only
+useful when loaded from HF Hub; no-op for local sources.</p>
+<p>The full unfiltered dataset is ~100 GB. Filter first to limit
+download size:</p>
+<div class="highlight"><pre><span></span><code>runs = DiffusionRuns.from_hf().task(&quot;text-to-image&quot;).download_raw_files()
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.from_directory" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_directory</span><span class="p">(</span><span class="n">root</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load runs from a compiled data directory (parquet-first).</p>
+<p>Reads <code>runs/diffusion.parquet</code> from the compiled data repo.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>root</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Compiled data directory containing <code>runs/diffusion.parquet</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.from_hf" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_hf</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="s1">&#39;ml-energy/benchmark-v3&#39;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">revision</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load diffusion runs from a Hugging Face dataset repository.</p>
+<p>The default dataset is gated. Before calling this method:</p>
+<ol>
+<li>Visit https://huggingface.co/datasets/ml-energy/benchmark-v3
+   and request access (granted automatically).</li>
+<li>Set the <code>HF_TOKEN</code> environment variable to a Hugging Face
+   access token.</li>
+</ol>
+<p>Downloads only the parquet summary file (~few MB). Methods that
+need raw data (timelines()) will automatically download the
+required files on first access.</p>
+<p>Respects the <code>HF_HOME</code> environment variable for cache location.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>repo_id</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>HF dataset repository ID.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;ml-energy/benchmark-v3&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>revision</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Git revision (branch, tag, or commit hash).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.from_parquet" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_parquet</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct DiffusionRuns from a pre-built parquet file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>path</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to the parquet file.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>base_dir</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If provided, resolve relative path fields against
+this directory.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.from_raw_results" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_raw_results</span><span class="p">(</span><span class="o">*</span><span class="n">roots</span><span class="p">,</span> <span class="n">tasks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_workers</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load runs from raw benchmark result directories.</p>
+<p>Parses <code>results.json</code> files and returns the collection.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>roots</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One or more benchmark root directories (or results sub-dirs).</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tasks</code>
+            </td>
+            <td>
+                  <code><span title="set">set</span>[<span title="str">str</span>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If given, only load these tasks.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>config_dir</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to diffusion config directory.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n_workers</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of parallel workers (default: auto).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.task" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">task</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given tasks.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.model_id" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">model_id</span><span class="p">(</span><span class="o">*</span><span class="n">model_ids</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given model IDs.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.gpu_model" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">gpu_model</span><span class="p">(</span><span class="o">*</span><span class="n">gpu_models</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given GPU models.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.num_gpus" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">num_gpus</span><span class="p">(</span><span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching given GPU counts or a range.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>counts</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact GPU counts to include.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>min</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum GPU count (inclusive).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>max</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum GPU count (inclusive).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.nickname" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">nickname</span><span class="p">(</span><span class="o">*</span><span class="n">nicknames</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given nicknames.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.batch_size" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">batch_size</span><span class="p">(</span><span class="o">*</span><span class="n">sizes</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching given batch sizes or a range.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>sizes</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact batch sizes to include.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>min</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum batch size (inclusive).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>max</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum batch size (inclusive).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.precision" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">precision</span><span class="p">(</span><span class="o">*</span><span class="n">prec</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter to runs matching any of the given weight precisions.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.where" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">where</span><span class="p">(</span><span class="n">predicate</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter runs by an arbitrary predicate.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>predicate</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<a class="autorefs autorefs-internal" title="mlenergy_data.records.runs.DiffusionRun
+
+
+  
+      dataclass
+  " href="#mlenergy_data.records.runs.DiffusionRun">DiffusionRun</a>], <span title="bool">bool</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Function that takes a <code>DiffusionRun</code> and returns True to keep it.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.group_by" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">group_by</span><span class="p">(</span><span class="o">*</span><span class="n">fields</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Group runs by one or more fields.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>fields</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One or more <code>DiffusionRun</code> field names to group by.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span>[<span title="typing.Any">Any</span>, <a class="autorefs autorefs-internal" title="mlenergy_data.records.runs.DiffusionRuns" href="#mlenergy_data.records.runs.DiffusionRuns">DiffusionRuns</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Single field: <code>{value: DiffusionRuns, ...}</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span>[<span title="typing.Any">Any</span>, <a class="autorefs autorefs-internal" title="mlenergy_data.records.runs.DiffusionRuns" href="#mlenergy_data.records.runs.DiffusionRuns">DiffusionRuns</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Multiple fields: <code>{(v1, v2, ...): DiffusionRuns, ...}</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.to_dataframe" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">to_dataframe</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert to DataFrame with one row per run.</p>
+<p>Private fields (path fields, HF metadata) are excluded.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="mlenergy_data.records.runs.DiffusionRuns.timelines" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">timelines</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;power.device_instant&#39;</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract power/temperature timeseries.</p>
+<p>Calls <code>DiffusionRun.timelines()</code> on each record, which handles
+downloading from HF Hub if needed.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>metric</code>
+            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;power.device_instant&#39;, &#39;power.device_average&#39;, &#39;temperature&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which timeline to extract. Supported values:
+<code>"power.device_instant"</code>, <code>"power.device_average"</code>,
+<code>"temperature"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;power.device_instant&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DataFrame with columns: task, model_id, num_gpus,</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>batch_size, timestamp, relative_time_s, value, metric</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+<div class="newsletter-signup">
+  <div class="newsletter-content">
+    <h3>Stay Updated</h3>
+    <p>Subscribe to our newsletter for the latest ML energy research.</p>
+    <form
+      action="https://buttondown.com/api/emails/embed-subscribe/ml-energy"
+      method="post"
+      class="newsletter-form"
+    >
+      <input type="email" name="email" placeholder="Enter your email" required />
+      <button type="submit">Subscribe</button>
+    </form>
+  </div>
+</div>
+
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 ML.ENERGY
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["announce.dismiss"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
