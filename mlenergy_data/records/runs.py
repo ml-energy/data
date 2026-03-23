@@ -951,7 +951,7 @@ class LLMRun:
         if not path_val:
             return
         root = self.__dict__["_hf_snapshot_root"]
-        rel = str(Path(path_val).relative_to(root))
+        rel = Path(path_val).relative_to(root).as_posix()
         download_file(repo_id, rel, revision=self.__dict__.get("_hf_revision"))
 
     def read_results_json(self) -> dict[str, Any]:
@@ -1143,7 +1143,7 @@ class DiffusionRun:
         if not path_val:
             return
         root = self.__dict__["_hf_snapshot_root"]
-        rel = str(Path(path_val).relative_to(root))
+        rel = Path(path_val).relative_to(root).as_posix()
         download_file(repo_id, rel, revision=self.__dict__.get("_hf_revision"))
 
     def read_results_json(self) -> dict[str, Any]:
@@ -1608,7 +1608,7 @@ class LLMRuns:
         """
         cols = ["task", "model_id", "num_gpus", "max_num_seqs", "output_len"]
         if not self._runs:
-            return pd.DataFrame(columns=cols)
+            return pd.DataFrame(columns=pd.Index(cols))
 
         rows: list[dict[str, Any]] = []
         for run in self._runs:
@@ -1622,7 +1622,7 @@ class LLMRuns:
                         "output_len": length,
                     }
                 )
-        return pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
+        return pd.DataFrame(rows) if rows else pd.DataFrame(columns=pd.Index(cols))
 
     def inter_token_latencies(self) -> pd.DataFrame:
         """Extract per-token inter-token latency samples.
@@ -1642,7 +1642,7 @@ class LLMRuns:
         """
         cols = ["task", "model_id", "num_gpus", "max_num_seqs", "itl_s"]
         if not self._runs:
-            return pd.DataFrame(columns=cols)
+            return pd.DataFrame(columns=pd.Index(cols))
 
         rows: list[dict[str, Any]] = []
         for run in self._runs:
@@ -1656,7 +1656,7 @@ class LLMRuns:
                         "itl_s": v,
                     }
                 )
-        return pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
+        return pd.DataFrame(rows) if rows else pd.DataFrame(columns=pd.Index(cols))
 
     def timelines(
         self,
@@ -1690,7 +1690,7 @@ class LLMRuns:
             "metric",
         ]
         if not self._runs:
-            return pd.DataFrame(columns=cols)
+            return pd.DataFrame(columns=pd.Index(cols))
 
         frames: list[pd.DataFrame] = []
         for run in self._runs:
@@ -1701,7 +1701,7 @@ class LLMRuns:
             tl["max_num_seqs"] = run.max_num_seqs
             frames.append(tl)
         if not frames:
-            return pd.DataFrame(columns=cols)
+            return pd.DataFrame(columns=pd.Index(cols))
         out = pd.concat(frames, ignore_index=True)
         return out.sort_values(["task", "model_id", "relative_time_s"]).reset_index(drop=True)
 
@@ -2044,7 +2044,7 @@ class DiffusionRuns:
             "metric",
         ]
         if not self._runs:
-            return pd.DataFrame(columns=cols)
+            return pd.DataFrame(columns=pd.Index(cols))
 
         frames: list[pd.DataFrame] = []
         for run in self._runs:
@@ -2055,6 +2055,6 @@ class DiffusionRuns:
             tl["batch_size"] = run.batch_size
             frames.append(tl)
         if not frames:
-            return pd.DataFrame(columns=cols)
+            return pd.DataFrame(columns=pd.Index(cols))
         out = pd.concat(frames, ignore_index=True)
         return out.sort_values(["task", "model_id", "relative_time_s"]).reset_index(drop=True)
