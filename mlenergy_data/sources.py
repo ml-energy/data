@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -11,6 +12,48 @@ from huggingface_hub import hf_hub_download, snapshot_download
 from huggingface_hub.errors import GatedRepoError, RepositoryNotFoundError
 
 logger = logging.getLogger(__name__)
+
+_long_paths_checked = False
+
+
+def _ensure_windows_long_paths() -> None:
+    """Verify that long path support is enabled on Windows.
+
+    On Windows, the default MAX_PATH of 260 characters is too short for the
+    deeply nested HuggingFace Hub cache paths used by this dataset. This
+    function checks whether long path support is enabled and raises a clear
+    error with instructions if it is not.
+
+    On non-Windows platforms this is a no-op.
+    """
+    global _long_paths_checked
+    if _long_paths_checked or sys.platform != "win32":
+        return
+    _long_paths_checked = True
+
+    import ctypes
+
+    try:
+        ntdll = ctypes.WinDLL("ntdll")
+        ntdll.RtlAreLongPathsEnabled.restype = ctypes.c_ubyte
+        ntdll.RtlAreLongPathsEnabled.argtypes = []
+        if ntdll.RtlAreLongPathsEnabled():
+            return
+    except (OSError, AttributeError):
+        # Cannot determine status (old Windows version); skip check.
+        return
+
+    raise RuntimeError(
+        "Windows long path support is not enabled. "
+        "This dataset contains deeply nested file paths that exceed the "
+        "default 260-character MAX_PATH limit.\n\n"
+        "To enable long path support, run the following in an elevated "
+        "PowerShell (Run as Administrator):\n\n"
+        '  Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control'
+        '\\FileSystem" -Name "LongPathsEnabled" -Value 1\n\n'
+        "Then restart your Python process."
+    )
+
 
 _GATED_DATASET_MSG = (
     "Failed to download dataset '{repo_id}'. "
@@ -55,6 +98,7 @@ class HFDatasetSource:
     allow_patterns: list[str] | None = None
 
     def local_root(self) -> Path:
+        _ensure_windows_long_paths()
         try:
             local = snapshot_download(
                 repo_id=self.repo_id,
@@ -86,6 +130,7 @@ def download_file(
     Returns:
         Local path to the downloaded file.
     """
+    _ensure_windows_long_paths()
     try:
         local = hf_hub_download(
             repo_id=repo_id,
