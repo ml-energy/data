@@ -1,0 +1,11 @@
+{
+  "name": "skill",
+  "description": "Analyze The ML.ENERGY Benchmark data (LLM and diffusion inference energy/latency/throughput on H100 and B200) using the mlenergy-data Python toolkit.",
+  "author": {
+    "name": "Jae-Won Chung",
+    "email": "jwnchung@umich.edu"
+  },
+  "homepage": "https://ml.energy/data",
+  "repository": "https://github.com/ml-energy/data",
+  "license": "Apache-2.0"
+}
