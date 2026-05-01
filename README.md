@@ -62,6 +62,27 @@ for arch, group in runs.task("gpqa").gpu_model("B200").group_by("architecture").
 - [**OpenG2G**](https://gpu2grid.io/openg2g/): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
 - [**The ML.ENERGY blog**](https://ml.energy/blog): Analysis scripts for blog posts.
 
+## Agent skill
+
+[`skills/mlenergy-data/`](skills/mlenergy-data/SKILL.md) is a portable [Agent Skill](https://agentskills.io/) that teaches AI coding agents (Claude Code, Cursor, Goose, OpenCode, Gemini CLI, GitHub Copilot, etc.) to answer natural-language questions about the benchmark using this toolkit.
+
+For Claude Code, install via the bundled plugin marketplace:
+
+```
+/plugin marketplace add ml-energy/data
+/plugin install skill@ml-energy-data
+```
+
+For other tools, drop the skill directly into that tool's skills directory:
+
+```bash
+mkdir -p ~/.cursor/skills && \  # or ~/.config/goose/skills, ~/.gemini/skills, ~/.claude/skills, ...
+  curl -fsSL https://github.com/ml-energy/data/archive/refs/heads/master.tar.gz | \
+  tar -xz -C ~/.cursor/skills --strip-components=2 'data-master/skills/mlenergy-data'
+```
+
+Gemini CLI also supports `gemini skills install https://github.com/ml-energy/data --consent --scope user` directly.
+
 ## Documentation
 
 See the full [documentation site](https://ml.energy/data/) for:
