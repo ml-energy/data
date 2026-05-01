@@ -4,7 +4,7 @@
     "name": "Jae-Won Chung",
     "email": "jwnchung@umich.edu"
   },
-  "description": "ML.ENERGY Data Toolkit plugins for Claude Code.",
+  "description": "ML.ENERGY Data Toolkit plugins for AI coding agents.",
   "plugins": [
     {
       "name": "skill",

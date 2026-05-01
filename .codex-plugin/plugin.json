@@ -1,0 +1,30 @@
+{
+  "name": "skill",
+  "description": "Analyze The ML.ENERGY Benchmark data with the mlenergy-data Python toolkit.",
+  "author": {
+    "name": "Jae-Won Chung",
+    "email": "jwnchung@umich.edu"
+  },
+  "homepage": "https://ml.energy/data",
+  "repository": "https://github.com/ml-energy/data",
+  "license": "Apache-2.0",
+  "keywords": [
+    "ml-energy",
+    "benchmark",
+    "gpu",
+    "energy",
+    "inference"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ML.ENERGY Data",
+    "shortDescription": "Analyze ML inference energy benchmark data",
+    "longDescription": "Use the mlenergy-data Python toolkit to query and compare LLM and diffusion inference energy, latency, throughput, and power measurements on H100 and B200 GPUs.",
+    "developerName": "ML.ENERGY",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive"
+    ],
+    "websiteURL": "https://ml.energy/data"
+  }
+}
