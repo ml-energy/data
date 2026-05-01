@@ -188,6 +188,24 @@ ok = candidates.where(lambda r: r.median_itl_ms <= median_itl_deadline_ms)
 best = min(ok, key=lambda r: r.energy_per_token_joules) if ok else None
 ```
 
+### "Reproduce a number shown on the public leaderboard"
+The public leaderboard (ml.energy/leaderboard) displays **one row per model**: the lowest-energy config that satisfies the user's current latency-deadline and energy-budget sliders. It is *not* an aggregate (median/mean) and *not* a canonical config — change the sliders and the displayed row changes. To reproduce a number a user is reading off the leaderboard, ask for their slider values and replay the same logic (`App.tsx`'s `getBestConfigPerModel`):
+```python
+itl_deadline_ms = 100        # "Median ITL deadline" slider
+per_token_budget_j = 5.0     # "Per token energy budget" slider
+selected_gpus = {"B200"}     # GPU checkbox state
+
+ok = (llm.task("gpqa")
+        .gpu_model(*selected_gpus)
+        .where(lambda r: r.median_itl_ms <= itl_deadline_ms
+                     and r.energy_per_token_joules <= per_token_budget_j))
+for nick, group in ok.group_by("nickname").items():
+    best = min(group, key=lambda r: r.energy_per_token_joules)
+    print(f"{nick}: {best.energy_per_token_joules:.4f} J/tok "
+          f"@ {best.num_gpus}x{best.gpu_model} batch={best.max_num_seqs} "
+          f"(median ITL {best.median_itl_ms:.1f} ms)")
+```
+
 ### "Lowest energy per image (text-to-image) on B200"
 ```python
 t2i = diff.task("text-to-image").gpu_model("B200")
@@ -274,6 +292,8 @@ When comparing a percentile against a deadline, the deadline must be in ms.
 10. **`group_by` keys are tuples for multi-field groupings.** `runs.group_by("model_id", "task")` returns `{(model_id, task): subcollection}`.
 
 11. **Power timeline `value` is summed across GPUs and windowed differently per domain.** `LLMRun.timelines()` slices to the steady-state window (post-warm-up); `DiffusionRun.timelines()` returns the full run. The `value` column is total power across all GPUs — divide by `r.num_gpus` for per-GPU, and don't compare LLM and diffusion timelines without accounting for the different windowing.
+
+12. **Aggregating across configs ≠ what the public leaderboard shows.** Taking a `median`/`mean`/`min`/`max` of a metric across the configs of one (model, task) gives a slider-independent summary — statistically reasonable, and the right default for "what does this model typically do" questions. But it will **not** match the number a user reads off the public leaderboard. The leaderboard at ml.energy/leaderboard displays one row per model: the lowest-energy config that satisfies the user's current latency-deadline and energy-budget sliders (`getBestConfigPerModel` in `App.tsx`). Per-config values from the parquet are unaggregated — every run is its own row — so a leaderboard cell is one specific config, not an average. If a user asks why your number doesn't match the leaderboard, explain the difference; if they want to reproduce a specific leaderboard cell, ask for their slider values and use the "Reproduce a number shown on the public leaderboard" recipe above.
 
 ## Working code-first
 
