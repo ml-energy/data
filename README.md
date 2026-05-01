@@ -76,7 +76,8 @@ For Claude Code, install via the bundled plugin marketplace:
 For other tools, drop the skill directly into that tool's skills directory:
 
 ```bash
-mkdir -p ~/.cursor/skills && \  # or ~/.config/goose/skills, ~/.gemini/skills, ~/.claude/skills, ...
+# or ~/.config/goose/skills, ~/.gemini/skills, ~/.claude/skills, ...
+mkdir -p ~/.cursor/skills && \
   curl -fsSL https://github.com/ml-energy/data/archive/refs/heads/master.tar.gz | \
   tar -xz -C ~/.cursor/skills --strip-components=2 'data-master/skills/mlenergy-data'
 ```
