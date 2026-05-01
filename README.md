@@ -69,20 +69,14 @@ for arch, group in runs.task("gpqa").gpu_model("B200").group_by("architecture").
 For Claude Code, install via the bundled plugin marketplace:
 
 ```
+# Inside Claude Code
 /plugin marketplace add ml-energy/data
 /plugin install skill@ml-energy-data
 ```
 
-For other tools, drop the skill directly into that tool's skills directory:
+Gemini CLI also supports `gemini skills install https://github.com/ml-energy/data --path skills`.
 
-```bash
-# or ~/.config/goose/skills, ~/.gemini/skills, ~/.claude/skills, ...
-mkdir -p ~/.cursor/skills && \
-  curl -fsSL https://github.com/ml-energy/data/archive/refs/heads/master.tar.gz | \
-  tar -xz -C ~/.cursor/skills --strip-components=2 'data-master/skills/mlenergy-data'
-```
-
-Gemini CLI also supports `gemini skills install https://github.com/ml-energy/data --consent --scope user` directly.
+For other tools, you can download the `skills/` directory and place it in the appropriate skills directory.
 
 ## Documentation
 
