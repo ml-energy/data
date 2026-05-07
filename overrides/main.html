@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block announce %}
+  We're sharing updates via <a href="https://buttondown.com/ml-energy">The ML.ENERGY Newsletter</a>!
+{% endblock %}
+
+{% block footer %}
+<div class="newsletter-signup">
+  <div class="newsletter-content">
+    <h3>Stay Updated</h3>
+    <p>Subscribe to our newsletter for the latest ML energy research.</p>
+    <form
+      action="https://buttondown.com/api/emails/embed-subscribe/ml-energy"
+      method="post"
+      class="newsletter-form"
+    >
+      <input type="email" name="email" placeholder="Enter your email" required />
+      <button type="submit">Subscribe</button>
+    </form>
+  </div>
+</div>
+{{ super() }}
+{% endblock %}
