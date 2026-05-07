@@ -46,7 +46,7 @@ Output structure:
 Load from the built package to confirm it works:
 
 ```python
-from mlenergy_data.records import LLMRuns, DiffusionRuns
+from mlenergy.data.records import LLMRuns, DiffusionRuns
 
 llm = LLMRuns.from_directory("/path/to/output", stable_only=True)
 diff = DiffusionRuns.from_directory("/path/to/output")
@@ -93,7 +93,7 @@ After upload, check https://huggingface.co/datasets/ml-energy/benchmark-v3:
 After upload, verify that `from_hf()` works end-to-end:
 
 ```python
-from mlenergy_data.records import LLMRuns, DiffusionRuns
+from mlenergy.data.records import LLMRuns, DiffusionRuns
 
 # Load from HF Hub (parquet only, fast)
 llm = LLMRuns.from_hf()

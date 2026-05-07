@@ -30,7 +30,7 @@ import shutil
 from pathlib import Path
 import pandas as pd
 
-from mlenergy_data.records.runs import DiffusionRuns, LLMRuns
+from mlenergy.data.records.runs import DiffusionRuns, LLMRuns
 
 logger = logging.getLogger(__name__)
 

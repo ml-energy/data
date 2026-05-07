@@ -17,7 +17,7 @@ pip install mlenergy-data
 ```
 
 ```python
-from mlenergy_data.records import LLMRuns, DiffusionRuns
+from mlenergy.data.records import LLMRuns, DiffusionRuns
 
 # Load (fast, parquet only ~few MB)
 runs = LLMRuns.from_hf()

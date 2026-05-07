@@ -4,16 +4,16 @@ Typed collection classes for benchmark runs.
 
 ## LLMRun
 
-::: mlenergy_data.records.runs.LLMRun
+::: mlenergy.data.records.runs.LLMRun
 
 ## LLMRuns
 
-::: mlenergy_data.records.runs.LLMRuns
+::: mlenergy.data.records.runs.LLMRuns
 
 ## DiffusionRun
 
-::: mlenergy_data.records.runs.DiffusionRun
+::: mlenergy.data.records.runs.DiffusionRun
 
 ## DiffusionRuns
 
-::: mlenergy_data.records.runs.DiffusionRuns
+::: mlenergy.data.records.runs.DiffusionRuns

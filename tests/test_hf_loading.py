@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from mlenergy_data.records.runs import (
+from mlenergy.data.records.runs import (
     DiffusionRun,
     DiffusionRuns,
     LLMRun,
@@ -480,7 +480,7 @@ class TestPerRecordHFMetadata:
         actual_path = runs[0]._results_path
 
         with patch(
-            "mlenergy_data.records.runs.download_file",
+            "mlenergy.data.records.runs.download_file",
             return_value=Path(actual_path),
         ) as mock:
             df = hf_runs.output_lengths()
@@ -529,7 +529,7 @@ class TestSelectiveDownload:
         assert len(filtered) == 1
 
         with patch(
-            "mlenergy_data.records.runs.download_file",
+            "mlenergy.data.records.runs.download_file",
             side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             filtered.output_lengths()
@@ -546,7 +546,7 @@ class TestSelectiveDownload:
         hf_runs, root, paths_by_batch = multi_run_setup
 
         with patch(
-            "mlenergy_data.records.runs.download_file",
+            "mlenergy.data.records.runs.download_file",
             side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             hf_runs.output_lengths()
@@ -576,7 +576,7 @@ class TestSelectiveDownload:
         assert len(filtered) == 1
 
         with patch(
-            "mlenergy_data.records.runs.download_file",
+            "mlenergy.data.records.runs.download_file",
             side_effect=_side_effect,
         ) as mock:
             filtered.output_lengths()
@@ -596,7 +596,7 @@ class TestSelectiveDownload:
         assert len(filtered) == 1
 
         with patch(
-            "mlenergy_data.records.runs.download_file",
+            "mlenergy.data.records.runs.download_file",
             side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             with contextlib.suppress(Exception):
@@ -616,7 +616,7 @@ class TestSelectiveDownload:
         assert len(filtered) == 2
 
         with patch(
-            "mlenergy_data.records.runs.download_file",
+            "mlenergy.data.records.runs.download_file",
             side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             filtered.download_raw_files()
@@ -634,7 +634,7 @@ class TestSelectiveDownload:
         filtered = hf_runs.max_num_seqs(8)
 
         with patch(
-            "mlenergy_data.records.runs.download_file",
+            "mlenergy.data.records.runs.download_file",
             side_effect=self._mock_download(root, paths_by_batch),
         ) as mock:
             filtered.output_lengths()
@@ -656,7 +656,7 @@ class TestDownloadTriggers:
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         hf_runs = _make_hf_runs(runs, root)
 
-        with patch("mlenergy_data.records.runs.download_file") as mock:
+        with patch("mlenergy.data.records.runs.download_file") as mock:
             for r in hf_runs:
                 _ = r.task
             _ = hf_runs[0]
@@ -672,7 +672,7 @@ class TestDownloadTriggers:
         runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         hf_runs = _make_hf_runs(runs, root)
 
-        with patch("mlenergy_data.records.runs.download_file") as mock:
+        with patch("mlenergy.data.records.runs.download_file") as mock:
             _ = [r.num_gpus for r in hf_runs]
             _ = [r.task for r in hf_runs]
             _ = [r.energy_per_token_joules for r in hf_runs]
@@ -714,7 +714,7 @@ class TestInterTokenLatencies:
         hf_runs = _make_hf_runs(runs, root)
 
         with patch(
-            "mlenergy_data.records.runs.download_file",
+            "mlenergy.data.records.runs.download_file",
             return_value=Path(runs[0]._results_path),
         ) as mock:
             df = hf_runs.inter_token_latencies()

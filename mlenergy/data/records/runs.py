@@ -19,9 +19,9 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from mlenergy_data.raw.path_parser import ParsedPath, parse_results_path
-from mlenergy_data.records.timelines import extract_device_timeline
-from mlenergy_data.sources import download_file
+from mlenergy.data.raw.path_parser import ParsedPath, parse_results_path
+from mlenergy.data.records.timelines import extract_device_timeline
+from mlenergy.data.sources import download_file
 
 logger = logging.getLogger(__name__)
 _MP_CONTEXT = mp.get_context("spawn")

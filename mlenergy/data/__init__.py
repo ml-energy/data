@@ -1,6 +1,6 @@
-"""Normalized benchmark record loaders."""
+"""ML.ENERGY Benchmark data toolkit."""
 
-from mlenergy_data.records.runs import (
+from mlenergy.data.records.runs import (
     DiffusionRun,
     DiffusionRuns,
     LLMRun,
@@ -13,3 +13,5 @@ __all__ = [
     "LLMRun",
     "LLMRuns",
 ]
+
+__version__ = "0.4.0"

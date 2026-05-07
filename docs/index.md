@@ -29,7 +29,7 @@ Before using the toolkit to load data from HF, you need to:
 ## Quick Example
 
 ```python
-from mlenergy_data.records import LLMRuns
+from mlenergy.data.records import LLMRuns
 
 runs = LLMRuns.from_hf()
 

@@ -8,7 +8,7 @@ Most FP8 variants append `" FP8"` to the BF16 nickname. Pair them by stripping t
 
 ```python
 from collections import defaultdict
-from mlenergy_data.records import LLMRuns
+from mlenergy.data.records import LLMRuns
 
 llm = LLMRuns.from_hf()
 

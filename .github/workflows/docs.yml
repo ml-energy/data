@@ -6,7 +6,7 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
-      - "mlenergy_data/**"
+      - "mlenergy/data/**"
 
 permissions:
   contents: write

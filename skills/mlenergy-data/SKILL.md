@@ -7,7 +7,7 @@ compatibility: Requires Python 3.10+, `pip install mlenergy-data`, and a Hugging
 
 # ML.ENERGY Data Toolkit
 
-The toolkit (`mlenergy_data`) loads and analyzes [The ML.ENERGY Benchmark v3.0](https://huggingface.co/datasets/ml-energy/benchmark-v3) — LLM and diffusion inference runs on NVIDIA H100 and B200 GPUs, published as parquet summaries plus per-run raw JSONs on HF Hub.
+The toolkit (`mlenergy.data`) loads and analyzes [The ML.ENERGY Benchmark v3.0](https://huggingface.co/datasets/ml-energy/benchmark-v3) — LLM and diffusion inference runs on NVIDIA H100 and B200 GPUs, published as parquet summaries plus per-run raw JSONs on HF Hub.
 
 Use this skill whenever the user wants to query, compare, aggregate, plot, or model the benchmark data.
 
@@ -30,7 +30,7 @@ Use this skill whenever the user wants to query, compare, aggregate, plot, or mo
 If running inside this repo, `source .venv/bin/activate` first. Otherwise `pip install mlenergy-data` (or `uv pip install mlenergy-data`).
 
 ```python
-from mlenergy_data.records import LLMRuns, DiffusionRuns
+from mlenergy.data.records import LLMRuns, DiffusionRuns
 
 llm = LLMRuns.from_hf()           # default: stable_only=True, ~few MB parquet only
 diff = DiffusionRuns.from_hf()
@@ -94,7 +94,7 @@ Filters are AND across calls (`.task("gpqa").gpu_model("B200")` ⇒ both). Withi
 
 ## Field cheat sheet
 
-The full set of fields lives in the `LLMRun` and `DiffusionRun` docstrings (`mlenergy_data/records/runs.py`) and in `to_dataframe()`. The most common ones for analysis:
+The full set of fields lives in the `LLMRun` and `DiffusionRun` docstrings (`mlenergy/data/records/runs.py`) and in `to_dataframe()`. The most common ones for analysis:
 
 **LLMRun (35 public fields, see [`references/DATA_CATALOG.md`](references/DATA_CATALOG.md) for the full list):**
 - Identity: `task`, `model_id`, `nickname`, `architecture`, `weight_precision`, `gpu_model`, `num_gpus`, `max_num_seqs`

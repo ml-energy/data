@@ -25,7 +25,7 @@ Before loading data with `from_hf()`, you need to:
 Each run is a frozen dataclass (`LLMRun` / `DiffusionRun`) with IDE autocomplete and type checking.
 
 ```python
-from mlenergy_data.records import LLMRuns, DiffusionRuns
+from mlenergy.data.records import LLMRuns, DiffusionRuns
 
 # Load from Hugging Face Hub
 runs = LLMRuns.from_hf()
@@ -197,7 +197,7 @@ tl = run.timelines(metric="power.device_instant")
 `DiffusionRuns` follows the same patterns:
 
 ```python
-from mlenergy_data.records import DiffusionRuns
+from mlenergy.data.records import DiffusionRuns
 
 diff = DiffusionRuns.from_hf()
 t2i = diff.task("text-to-image")
@@ -222,7 +222,7 @@ r.is_text_to_video   # True for text-to-video tasks
 
 ```python
 import numpy as np
-from mlenergy_data.modeling import LogisticModel
+from mlenergy.data.modeling import LogisticModel
 
 # Fit from data
 x = np.log2([8, 16, 32, 64, 128, 256])
@@ -242,7 +242,7 @@ fit2 = LogisticModel.from_dict(d)
 `ITLMixtureModel` fits a two-component lognormal mixture for inter-token latency:
 
 ```python
-from mlenergy_data.modeling import ITLMixtureModel
+from mlenergy.data.modeling import ITLMixtureModel
 
 # Fit from raw ITL samples (seconds)
 model = ITLMixtureModel.fit(itl_samples_s, max_samples=2048, seed=0)

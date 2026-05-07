@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from mlenergy_data.records.runs import LLMRuns
-from mlenergy_data.records.timelines import extract_device_timeline
+from mlenergy.data.records.runs import LLMRuns
+from mlenergy.data.records.timelines import extract_device_timeline
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:
@@ -433,7 +433,7 @@ def _make_diffusion_fixture(
 
 
 def test_diffusion_runsfrom_raw_results(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -452,7 +452,7 @@ def test_diffusion_runsfrom_raw_results(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_filtering(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -474,7 +474,7 @@ def test_diffusion_runs_filtering(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_field_access(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -488,7 +488,7 @@ def test_diffusion_runs_field_access(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_group_by(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -503,7 +503,7 @@ def test_diffusion_runs_group_by(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_concatenation_and_repr(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -516,7 +516,7 @@ def test_diffusion_runs_concatenation_and_repr(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_to_dataframe(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -543,7 +543,7 @@ def test_llm_runs_nickname_filter(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_nickname_filter(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -601,7 +601,7 @@ def test_llm_runs_num_gpus_range(tmp_path: Path) -> None:
 def test_diffusion_runs_batch_range(tmp_path: Path) -> None:
     import pytest
 
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -637,7 +637,7 @@ def test_llm_runs_list_comprehension_access(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_list_comprehension_access(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -655,7 +655,7 @@ def test_diffusion_runs_list_comprehension_access(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_num_gpus_filter(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
@@ -671,7 +671,7 @@ def test_diffusion_runs_num_gpus_filter(tmp_path: Path) -> None:
 
 
 def test_diffusion_runs_precision_filter(tmp_path: Path) -> None:
-    from mlenergy_data.records.runs import DiffusionRuns
+    from mlenergy.data.records.runs import DiffusionRuns
 
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"

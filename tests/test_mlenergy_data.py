@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from mlenergy_data.raw.path_parser import parse_results_path
+from mlenergy.data.raw.path_parser import parse_results_path
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:

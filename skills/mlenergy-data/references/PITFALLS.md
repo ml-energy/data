@@ -47,7 +47,7 @@ Only an issue if you read raw `results.json` directly via `run.read_results_json
 
 ### Per-device timeline columns
 
-`run.timelines()` exposes only the GPU-summed `value`. Per-device samples are present in raw `results.json` under `timeline.power.device_instant.<gpu_id>` if needed. The internal helper `mlenergy_data.records.timelines.extract_device_timeline` returns wide-form per-device columns plus the total — use it directly if you're doing per-GPU analysis.
+`run.timelines()` exposes only the GPU-summed `value`. Per-device samples are present in raw `results.json` under `timeline.power.device_instant.<gpu_id>` if needed. The internal helper `mlenergy.data.records.timelines.extract_device_timeline` returns wide-form per-device columns plus the total — use it directly if you're doing per-GPU analysis.
 
 ### Stability cascade rule
 
@@ -83,7 +83,7 @@ candidates = {
 
 The toolkit uses one generic field for both image and video runs. Check `r.is_text_to_image` / `r.is_text_to_video` (or `r.task`) to decide labels and which size fields are populated. `num_frames` and `fps` are `None` for image runs. The leaderboard-build script splits this into `energy_per_image_joules` / `energy_per_video_joules` in its JSON output, but that's a downstream rename, not a toolkit field.
 
-## `mlenergy_data.modeling` is not recommended for general use
+## `mlenergy.data.modeling` is not recommended for general use
 
 The toolkit exports `LogisticModel` (4-parameter sigmoid for batch sweeps) and `ITLMixtureModel` (two-component lognormal for inter-token latency). Both classes work, but their fit quality is unreliable enough that the skill does not surface them. Concretely, on the v3 dataset:
 
