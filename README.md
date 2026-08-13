@@ -66,12 +66,17 @@ for arch, group in runs.task("gpqa").gpu_model("B200").group_by("architecture").
 
 [`skills/mlenergy-data/`](skills/mlenergy-data/SKILL.md) is a portable [Agent Skill](https://agentskills.io/) that teaches AI coding agents (Claude Code, Cursor, Goose, OpenCode, Gemini CLI, GitHub Copilot, etc.) to answer natural-language questions about the benchmark using this toolkit.
 
-For Claude Code, install via the bundled plugin marketplace:
+For Claude Code and Codex, install via the [ML.ENERGY plugin marketplace](https://github.com/ml-energy/plugins):
 
 ```
 # Inside Claude Code
-/plugin marketplace add ml-energy/data
-/plugin install skill@ml-energy-data
+/plugin marketplace add ml-energy/plugins
+/plugin install mlenergy-data@ml-energy
+```
+
+```console
+$ codex plugin marketplace add ml-energy/plugins
+$ codex plugin add mlenergy-data@ml-energy
 ```
 
 Gemini CLI also supports `gemini skills install https://github.com/ml-energy/data --path skills`.
