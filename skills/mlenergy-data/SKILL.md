@@ -85,7 +85,7 @@ Iteration yields typed records — the IDE/autocomplete works. Use `min`/`max`/`
 | `architecture(*values)` | yes | — | `"Dense Transformer"`, `"MoE"`, `"Mamba-Transformer Hybrid"` |
 | `nickname(*names)` | yes | yes | human-friendly display name |
 | `model_id(*ids)` | yes | yes | `"org/model"` HF identifier |
-| `prefix_cache_query_ratio(min=, max=)` | yes | — | prefix cache queries per prompt token; no-op without bounds, excludes runs without cache data when a bound is given |
+| `prefix_cache_query_ratio(min=, max=)` | yes | — | prefix cache queries per prompt token; no-op without bounds, excludes runs with prefix caching disabled when a bound is given |
 | `where(predicate)` | yes | yes | arbitrary lambda |
 | `stable()` / `unstable()` | yes | — | LLM-only (see Stability) |
 | `group_by(*fields)` | yes | yes | returns `{value: subcollection}` |
@@ -104,7 +104,7 @@ The full set of fields lives in the `LLMRun` and `DiffusionRun` docstrings (`mle
 - Workload: `total_output_tokens`, `completed_requests`, `avg_output_len`, `avg_batch_size` (actual concurrent sequences observed in steady state — usually < `max_num_seqs`)
 - Latency: `mean_itl_ms`, `median_itl_ms`, `p50_itl_ms`, `p90_itl_ms`, `p95_itl_ms`, `p99_itl_ms` (ITL = inter-token latency)
 - Parallelism: `tensor_parallel`, `expert_parallel`, `data_parallel`
-- Prefix cache (from Prometheus, `None` if not recorded): `prompt_tokens`, `prefix_cache_queries`, `prefix_cache_hits`, plus the properties `prefix_cache_hit_share` (hits / queries) and `prefix_cache_query_ratio` (queries / prompt tokens, well above 1 suggests recomputation after preemption)
+- Prefix cache (from Prometheus): `prompt_tokens`, `prefix_cache_queries`, `prefix_cache_hits`, plus the properties `prefix_cache_hit_share` (hits / queries) and `prefix_cache_query_ratio` (queries / prompt tokens, well above 1 suggests recomputation after preemption). Everything except `prompt_tokens` is `None` if prefix caching was disabled.
 - Stability: `is_stable`, `unstable_reason`
 
 **DiffusionRun (22 public fields):**

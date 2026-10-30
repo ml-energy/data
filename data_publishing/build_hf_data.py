@@ -1,25 +1,27 @@
 """Build a self-contained HF-ready data package from benchmark results.
 
 This CLI produces a directory structure that can be uploaded to HF Hub
-via ``hf upload-large-folder``. The output includes:
+via `hf upload-large-folder`. The output includes:
 
-- ``runs/llm.parquet`` and ``runs/diffusion.parquet``: pre-computed run
+- `runs/llm.parquet` and `runs/diffusion.parquet`: pre-computed run
   summary tables browseable via HF Data Studio.
-- ``configs/``: embedded model_info.json and monolithic.config.yaml files.
-- ``llm/`` and ``diffusion/``: raw results.json and prometheus.json files
-  (skipped with ``--skip-raw``).
-- ``README.md``: YAML config for HF Data Studio + schema documentation.
+- `configs/`: embedded model_info.json and monolithic.config.yaml files.
+- `llm/` and `diffusion/`: raw results.json and prometheus.json files
+  (skipped with `--skip-raw`).
+- `README.md`: YAML config for HF Data Studio + schema documentation.
 
-Usage::
+Usage:
 
-    python data_publishing/build_hf_data.py \\
-      --results-dir /path/to/llm/h100/current/run \\
-      --results-dir /path/to/llm/b200/current/run \\
-      --results-dir /path/to/diffusion/h100/current/run \\
-      --results-dir /path/to/diffusion/b200/current/run \\
-      --llm-config-dir /path/to/configs/vllm \\
-      --diffusion-config-dir /path/to/configs/xdit \\
-      --out-dir /path/to/output
+```bash
+python data_publishing/build_hf_data.py \\
+  --results-dir /path/to/llm/h100/current/run \\
+  --results-dir /path/to/llm/b200/current/run \\
+  --results-dir /path/to/diffusion/h100/current/run \\
+  --results-dir /path/to/diffusion/b200/current/run \\
+  --llm-config-dir /path/to/configs/vllm \\
+  --diffusion-config-dir /path/to/configs/xdit \\
+  --out-dir /path/to/output
+```
 """
 
 from __future__ import annotations
@@ -48,7 +50,7 @@ def _rewrite_paths_relative(df: pd.DataFrame, roots: list[Path]) -> pd.DataFrame
     """Rewrite absolute results_path / prometheus_path to relative paths.
 
     For each path, find which root it falls under and make it relative
-    to that root's grandparent (the benchmark root, e.g. ``3.0/``).
+    to that root's grandparent (the benchmark root, e.g. `3.0/`).
     """
     df = df.copy()
     path_cols = [c for c in ("results_path", "prometheus_path") if c in df.columns]
@@ -75,7 +77,7 @@ def _rewrite_paths_relative(df: pd.DataFrame, roots: list[Path]) -> pd.DataFrame
 def _infer_benchmark_root_from_results_dir(results_dir: Path) -> Path:
     """Infer the benchmark root from a results directory path.
 
-    The expected structure is: ``<root>/<domain>/<gpu>/<snapshot>/run``
+    The expected structure is: `<root>/<domain>/<gpu>/<snapshot>/run`
     """
     if results_dir.name == "run" and len(results_dir.parents) >= 4:
         return results_dir.parents[3]
@@ -190,7 +192,7 @@ def main() -> None:
     parser.add_argument(
         "--out-dir",
         type=str,
-        default="/turbo/jwnchung/benchmark_hf/3.0",
+        required=True,
         help="Output directory for the HF-ready package",
     )
     parser.add_argument(

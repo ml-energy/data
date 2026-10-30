@@ -47,19 +47,26 @@ def _safe_float(v: object) -> float | None:
         return None
 
 
-def _prometheus_counter(prometheus: dict[str, Any], name: str) -> float | None:
-    """Sum a counter over its label sets in the last Prometheus snapshot of a run."""
-    timeline = prometheus.get("timeline")
-    if not isinstance(timeline, list) or not timeline:
-        return None
-    text = timeline[-1].get("metrics")
-    if not isinstance(text, str):
-        return None
+def _prometheus_counter(metrics: str, name: str) -> float:
+    """Sum a counter over its label sets in a Prometheus text snapshot."""
     pattern = re.compile(rf"^{re.escape(name)}(?:\{{[^}}]*\}})?\s+(\S+)", re.MULTILINE)
-    values = [_safe_float(m.group(1)) for m in pattern.finditer(text)]
-    if not values or any(v is None for v in values):
-        return None
-    return sum(v for v in values if v is not None)
+    values = [float(m.group(1)) for m in pattern.finditer(metrics)]
+    if not values:
+        raise ValueError(f"Counter {name} not found in Prometheus snapshot")
+    return sum(values)
+
+
+def _prefix_caching_enabled(metrics: str) -> bool:
+    """Read `enable_prefix_caching` from `vllm:cache_config_info` in a Prometheus snapshot."""
+    pattern = re.compile(
+        r'^vllm:cache_config_info\{(?:[^\n]*,)?enable_prefix_caching="([^"]*)"', re.MULTILINE
+    )
+    flags = set(pattern.findall(metrics))
+    if flags == {"True"}:
+        return True
+    if flags == {"False"}:
+        return False
+    raise ValueError(f"Expected one enable_prefix_caching value across engines, got {flags}")
 
 
 def _coerce_int(config: dict[str, str], key: str) -> int | None:
@@ -550,6 +557,13 @@ def _llm_row(
     except Exception:
         avg_batch_size = None
 
+    metrics = prometheus["timeline"][-1]["metrics"]
+    prefix_cache_queries: float | None = None
+    prefix_cache_hits: float | None = None
+    if _prefix_caching_enabled(metrics):
+        prefix_cache_queries = _prometheus_counter(metrics, "vllm:prefix_cache_queries_total")
+        prefix_cache_hits = _prometheus_counter(metrics, "vllm:prefix_cache_hits_total")
+
     return LLMRun(
         domain="llm",
         task=parsed.workload,
@@ -588,9 +602,9 @@ def _llm_row(
         unstable_reason="",
         _results_path=str(p),
         _prometheus_path=str(prom_path),
-        prompt_tokens=_prometheus_counter(prometheus, "vllm:prompt_tokens_total"),
-        prefix_cache_queries=_prometheus_counter(prometheus, "vllm:prefix_cache_queries_total"),
-        prefix_cache_hits=_prometheus_counter(prometheus, "vllm:prefix_cache_hits_total"),
+        prompt_tokens=_prometheus_counter(metrics, "vllm:prompt_tokens_total"),
+        prefix_cache_queries=prefix_cache_queries,
+        prefix_cache_hits=prefix_cache_hits,
     )
 
 
@@ -922,12 +936,11 @@ class LLMRun:
         is_stable: Whether this run passed stability checks.
         unstable_reason: Reason for instability (empty if stable).
         prompt_tokens: Prompt tokens processed by the server over the whole run, from the
-            last Prometheus snapshot (`vllm:prompt_tokens_total`). `None` if not recorded.
+            last Prometheus snapshot (`vllm:prompt_tokens_total`).
         prefix_cache_queries: Tokens looked up in the prefix cache over the whole run
-            (`vllm:prefix_cache_queries_total`). `None` if not recorded, which also
-            happens when prefix caching is disabled.
+            (`vllm:prefix_cache_queries_total`). `None` if prefix caching was disabled.
         prefix_cache_hits: Tokens found in the prefix cache over the whole run
-            (`vllm:prefix_cache_hits_total`). `None` if not recorded.
+            (`vllm:prefix_cache_hits_total`). `None` if prefix caching was disabled.
     """
 
     domain: str
@@ -967,29 +980,29 @@ class LLMRun:
     unstable_reason: str
     _results_path: str
     _prometheus_path: str
-    prompt_tokens: float | None = None
-    prefix_cache_queries: float | None = None
-    prefix_cache_hits: float | None = None
+    prompt_tokens: float
+    prefix_cache_queries: float | None
+    prefix_cache_hits: float | None
 
     @property
     def prefix_cache_hit_share(self) -> float | None:
-        """Prefix cache hits divided by prefix cache queries, or `None` if unavailable."""
+        """Prefix cache hits divided by prefix cache queries.
+
+        `None` if prefix caching was disabled.
+        """
         if self.prefix_cache_queries is None or self.prefix_cache_hits is None:
-            return None
-        if self.prefix_cache_queries <= 0:
             return None
         return self.prefix_cache_hits / self.prefix_cache_queries
 
     @property
     def prefix_cache_query_ratio(self) -> float | None:
-        """Prefix cache queries divided by prompt tokens, or `None` if unavailable.
+        """Prefix cache queries divided by prompt tokens.
 
         Values clearly above 1 mean the server looked up more tokens than the
         prompts contain, e.g. because preempted requests were recomputed.
+        `None` if prefix caching was disabled.
         """
-        if self.prefix_cache_queries is None or self.prompt_tokens is None:
-            return None
-        if self.prompt_tokens <= 0:
+        if self.prefix_cache_queries is None:
             return None
         return self.prefix_cache_queries / self.prompt_tokens
 
@@ -1253,6 +1266,21 @@ _LLM_FIELDS = frozenset(f.name for f in dataclasses.fields(LLMRun))
 _DIFFUSION_FIELDS = frozenset(f.name for f in dataclasses.fields(DiffusionRun))
 
 
+def _check_parquet_columns(
+    df: pd.DataFrame, fields: frozenset[str], path: Path, collection: str
+) -> None:
+    """Raise if a parquet file lacks columns for any run field."""
+    # Parquet stores path fields without the leading underscore.
+    missing = sorted(f.removeprefix("_") for f in fields - set(df.columns))
+    if missing:
+        raise ValueError(
+            f"{path} is missing columns required by this version of mlenergy-data: "
+            f"{', '.join(missing)}. The file was built with an older version of the "
+            f"library. You can download the latest dataset by calling "
+            f"`{collection}.from_hf()`."
+        )
+
+
 class LLMRuns:
     """Immutable collection of LLM benchmark runs with fluent filtering.
 
@@ -1403,6 +1431,7 @@ class LLMRuns:
             rename["prometheus_path"] = "_prometheus_path"
         if rename:
             df = df.rename(columns=rename)
+        _check_parquet_columns(df, _LLM_FIELDS, path, cls.__name__)
         if base_dir is not None:
             col_set = set(df.columns)
             for col in ("_results_path", "_prometheus_path"):
@@ -1529,8 +1558,8 @@ class LLMRuns:
     ) -> LLMRuns:
         """Filter to runs whose prefix cache queries per prompt token fall in a range.
 
-        With no bounds, all runs are returned unchanged. With a bound, runs without
-        prefix cache data are excluded. For example, `max=1.01` drops runs where
+        With no bounds, all runs are returned unchanged. With a bound, runs with
+        prefix caching disabled are excluded. For example, `max=1.01` drops runs where
         the server queried the cache for far more tokens than the prompts contain.
 
         Args:
@@ -1901,6 +1930,7 @@ class DiffusionRuns:
             rename["results_path"] = "_results_path"
         if rename:
             df = df.rename(columns=rename)
+        _check_parquet_columns(df, _DIFFUSION_FIELDS, path, cls.__name__)
         if base_dir is not None and "_results_path" in df.columns:
             rp_series: pd.Series[str] = df["_results_path"]
             df["_results_path"] = rp_series.apply(

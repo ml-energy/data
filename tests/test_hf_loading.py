@@ -37,6 +37,7 @@ def _make_benchmark_fixture(
     max_num_seqs: int = 16,
     seed: int = 1,
     avg_batch: float = 16.0,
+    prefix_caching: bool = True,
 ) -> None:
     """Create a minimal LLM benchmark directory with one run."""
     run_dir = (
@@ -73,7 +74,19 @@ def _make_benchmark_fixture(
     )
     _write_json(
         run_dir / "prometheus.json",
-        {"steady_state_stats": {"vllm:num_requests_running": avg_batch}},
+        {
+            "steady_state_stats": {"vllm:num_requests_running": avg_batch},
+            "timeline": [
+                {
+                    "metrics": (
+                        f'vllm:cache_config_info{{enable_prefix_caching="{prefix_caching}"}} 1.0\n'
+                        "vllm:prompt_tokens_total 1000.0\n"
+                        "vllm:prefix_cache_queries_total 1000.0\n"
+                        "vllm:prefix_cache_hits_total 600.0\n"
+                    )
+                }
+            ],
+        },
     )
 
     org, model = model_id.split("/", 1)
@@ -163,7 +176,7 @@ class TestLLMParquetRoundTrip:
         root = tmp_path / "bench"
         cfg_root = tmp_path / "cfg"
         _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
-        _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=2)
+        _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=2, prefix_caching=False)
 
         original = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
         assert len(original) == 2
@@ -249,6 +262,27 @@ class TestLLMParquetRoundTrip:
         restored = LLMRuns.from_parquet(parquet_path, base_dir=base, stable_only=False)
         assert restored[0]._results_path == str(base / "relative/path/results.json")
         assert restored[0]._prometheus_path == str(base / "relative/path/prometheus.json")
+
+    def test_missing_columns(self, tmp_path: Path) -> None:
+        root = tmp_path / "bench"
+        cfg_root = tmp_path / "cfg"
+        _make_benchmark_fixture(root, cfg_root)
+
+        runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+        df = runs.to_dataframe()
+        df["results_path"] = [r._results_path for r in runs]
+        df = df.drop(columns=["prompt_tokens", "prefix_cache_queries", "prefix_cache_hits"])
+        parquet_path = tmp_path / "llm.parquet"
+        df.to_parquet(parquet_path, index=False)
+
+        with pytest.raises(ValueError) as exc_info:
+            LLMRuns.from_parquet(parquet_path, stable_only=False)
+        message = str(exc_info.value)
+        assert (
+            "missing columns required by this version of mlenergy-data: "
+            "prefix_cache_hits, prefix_cache_queries, prometheus_path, prompt_tokens." in message
+        )
+        assert "`LLMRuns.from_hf()`" in message
 
 
 class TestDiffusionParquetRoundTrip:
