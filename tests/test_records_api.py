@@ -23,9 +23,13 @@ def _make_benchmark_fixture(
     max_num_seqs: int = 16,
     seed: int = 1,
     avg_batch: float = 16.0,
-    cache_counters: tuple[float, float, float] | None = None,
+    prompt_tokens: float = 1000.0,
+    prefix_cache: tuple[float, float] | None = (1000.0, 600.0),
 ) -> None:
-    """Create a minimal benchmark directory with one run."""
+    """Create a minimal benchmark directory with one run.
+
+    `prefix_cache` is `(queries, hits)`, or `None` for a run with prefix caching disabled.
+    """
     run_dir = (
         root
         / "llm"
@@ -58,25 +62,27 @@ def _make_benchmark_fixture(
             ],
         },
     )
-    prometheus: dict[str, object] = {
-        "steady_state_stats": {"vllm:num_requests_running": avg_batch}
-    }
-    if cache_counters is not None:
-        prompt, queries, hits = cache_counters
-        prometheus["timeline"] = [
-            {"metrics": 'vllm:prompt_tokens_total{engine="0"} 1.0\n'},
-            {
-                "metrics": (
-                    "# TYPE vllm:prompt_tokens_total counter\n"
-                    f'vllm:prompt_tokens_total{{engine="0"}} {prompt / 2}\n'
-                    f'vllm:prompt_tokens_total{{engine="1"}} {prompt / 2}\n'
-                    f'vllm:prefix_cache_queries_total{{engine="0"}} {queries}\n'
-                    f'vllm:prefix_cache_queries_created{{engine="0"}} 1.7e9\n'
-                    f'vllm:prefix_cache_hits_total{{engine="0"}} {hits}\n'
-                )
-            },
-        ]
-    _write_json(run_dir / "prometheus.json", prometheus)
+    queries, hits = prefix_cache if prefix_cache is not None else (0.0, 0.0)
+    last_metrics = "# TYPE vllm:prompt_tokens_total counter\n"
+    for engine in ("0", "1"):
+        last_metrics += (
+            f'vllm:cache_config_info{{block_size="16",'
+            f'enable_prefix_caching="{prefix_cache is not None}",engine="{engine}"}} 1.0\n'
+            f'vllm:prompt_tokens_total{{engine="{engine}"}} {prompt_tokens / 2}\n'
+            f'vllm:prefix_cache_queries_total{{engine="{engine}"}} {queries / 2}\n'
+            f'vllm:prefix_cache_queries_created{{engine="{engine}"}} 1.7e9\n'
+            f'vllm:prefix_cache_hits_total{{engine="{engine}"}} {hits / 2}\n'
+        )
+    _write_json(
+        run_dir / "prometheus.json",
+        {
+            "steady_state_stats": {"vllm:num_requests_running": avg_batch},
+            "timeline": [
+                {"metrics": 'vllm:prompt_tokens_total{engine="0"} 1.0\n'},
+                {"metrics": last_metrics},
+            ],
+        },
+    )
 
     org, model = model_id.split("/", 1)
     model_info_dir = cfg_root / task / org / model
@@ -704,21 +710,18 @@ def test_diffusion_runs_precision_filter(tmp_path: Path) -> None:
 def test_llm_runs_prefix_cache_counters(tmp_path: Path) -> None:
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
-    _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
-    _make_benchmark_fixture(
-        root, cfg_root, max_num_seqs=32, seed=2, cache_counters=(1000.0, 1000.0, 600.0)
-    )
-    _make_benchmark_fixture(
-        root, cfg_root, max_num_seqs=64, seed=3, cache_counters=(1000.0, 5000.0, 2000.0)
-    )
+    _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1, prefix_cache=None)
+    _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=2, prefix_cache=(1000.0, 600.0))
+    _make_benchmark_fixture(root, cfg_root, max_num_seqs=64, seed=3, prefix_cache=(5000.0, 2000.0))
 
     runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
-    none, clean, recomputed = (runs.max_num_seqs(b)[0] for b in (16, 32, 64))
+    disabled, clean, recomputed = (runs.max_num_seqs(b)[0] for b in (16, 32, 64))
 
-    assert none.prompt_tokens is None
-    assert none.prefix_cache_queries is None
-    assert none.prefix_cache_hit_share is None
-    assert none.prefix_cache_query_ratio is None
+    assert disabled.prompt_tokens == 1000.0
+    assert disabled.prefix_cache_queries is None
+    assert disabled.prefix_cache_hits is None
+    assert disabled.prefix_cache_hit_share is None
+    assert disabled.prefix_cache_query_ratio is None
 
     assert clean.prompt_tokens == 1000.0
     assert clean.prefix_cache_queries == 1000.0
@@ -736,13 +739,9 @@ def test_llm_runs_prefix_cache_counters(tmp_path: Path) -> None:
 def test_llm_runs_prefix_cache_query_ratio_filter(tmp_path: Path) -> None:
     root = tmp_path / "bench"
     cfg_root = tmp_path / "cfg"
-    _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
-    _make_benchmark_fixture(
-        root, cfg_root, max_num_seqs=32, seed=2, cache_counters=(1000.0, 1000.0, 600.0)
-    )
-    _make_benchmark_fixture(
-        root, cfg_root, max_num_seqs=64, seed=3, cache_counters=(1000.0, 5000.0, 2000.0)
-    )
+    _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1, prefix_cache=None)
+    _make_benchmark_fixture(root, cfg_root, max_num_seqs=32, seed=2, prefix_cache=(1000.0, 600.0))
+    _make_benchmark_fixture(root, cfg_root, max_num_seqs=64, seed=3, prefix_cache=(5000.0, 2000.0))
 
     runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
 

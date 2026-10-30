@@ -10,7 +10,7 @@ after first download).
 
 Code fence annotations:
     test="skip"        Always skip (e.g. placeholder paths, heavy bulk downloads).
-    test="skip-bulk"   Skip unless ``--run-bulk`` is passed.  These blocks
+    test="skip-bulk"   Skip unless `--run-bulk` is passed.  These blocks
                        trigger bulk raw-file downloads from HF Hub.
 """
 
