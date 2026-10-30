@@ -85,6 +85,7 @@ Iteration yields typed records — the IDE/autocomplete works. Use `min`/`max`/`
 | `architecture(*values)` | yes | — | `"Dense Transformer"`, `"MoE"`, `"Mamba-Transformer Hybrid"` |
 | `nickname(*names)` | yes | yes | human-friendly display name |
 | `model_id(*ids)` | yes | yes | `"org/model"` HF identifier |
+| `prefix_cache_query_ratio(min=, max=)` | yes | — | prefix cache queries per prompt token; no-op without bounds, excludes runs without cache data when a bound is given |
 | `where(predicate)` | yes | yes | arbitrary lambda |
 | `stable()` / `unstable()` | yes | — | LLM-only (see Stability) |
 | `group_by(*fields)` | yes | yes | returns `{value: subcollection}` |
@@ -96,13 +97,14 @@ Filters are AND across calls (`.task("gpqa").gpu_model("B200")` ⇒ both). Withi
 
 The full set of fields lives in the `LLMRun` and `DiffusionRun` docstrings (`mlenergy/data/records/runs.py`) and in `to_dataframe()`. The most common ones for analysis:
 
-**LLMRun (35 public fields, see [`references/DATA_CATALOG.md`](references/DATA_CATALOG.md) for the full list):**
+**LLMRun (38 public fields, see [`references/DATA_CATALOG.md`](references/DATA_CATALOG.md) for the full list):**
 - Identity: `task`, `model_id`, `nickname`, `architecture`, `weight_precision`, `gpu_model`, `num_gpus`, `max_num_seqs`
 - Size: `total_params_billions`, `activated_params_billions` (equals total for dense; smaller for MoE)
 - Energy/throughput: `energy_per_token_joules`, `energy_per_request_joules`, `output_throughput_tokens_per_sec`, `request_throughput_req_per_sec`, `avg_power_watts`
 - Workload: `total_output_tokens`, `completed_requests`, `avg_output_len`, `avg_batch_size` (actual concurrent sequences observed in steady state — usually < `max_num_seqs`)
 - Latency: `mean_itl_ms`, `median_itl_ms`, `p50_itl_ms`, `p90_itl_ms`, `p95_itl_ms`, `p99_itl_ms` (ITL = inter-token latency)
 - Parallelism: `tensor_parallel`, `expert_parallel`, `data_parallel`
+- Prefix cache (from Prometheus, `None` if not recorded): `prompt_tokens`, `prefix_cache_queries`, `prefix_cache_hits`, plus the properties `prefix_cache_hit_share` (hits / queries) and `prefix_cache_query_ratio` (queries / prompt tokens, well above 1 suggests recomputation after preemption)
 - Stability: `is_stable`, `unstable_reason`
 
 **DiffusionRun (22 public fields):**

@@ -7,6 +7,7 @@ import json
 import logging
 import multiprocessing as mp
 import os
+import re
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
@@ -44,6 +45,21 @@ def _safe_float(v: object) -> float | None:
         return float(v)  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return None
+
+
+def _prometheus_counter(prometheus: dict[str, Any], name: str) -> float | None:
+    """Sum a counter over its label sets in the last Prometheus snapshot of a run."""
+    timeline = prometheus.get("timeline")
+    if not isinstance(timeline, list) or not timeline:
+        return None
+    text = timeline[-1].get("metrics")
+    if not isinstance(text, str):
+        return None
+    pattern = re.compile(rf"^{re.escape(name)}(?:\{{[^}}]*\}})?\s+(\S+)", re.MULTILINE)
+    values = [_safe_float(m.group(1)) for m in pattern.finditer(text)]
+    if not values or any(v is None for v in values):
+        return None
+    return sum(v for v in values if v is not None)
 
 
 def _coerce_int(config: dict[str, str], key: str) -> int | None:
@@ -572,6 +588,9 @@ def _llm_row(
         unstable_reason="",
         _results_path=str(p),
         _prometheus_path=str(prom_path),
+        prompt_tokens=_prometheus_counter(prometheus, "vllm:prompt_tokens_total"),
+        prefix_cache_queries=_prometheus_counter(prometheus, "vllm:prefix_cache_queries_total"),
+        prefix_cache_hits=_prometheus_counter(prometheus, "vllm:prefix_cache_hits_total"),
     )
 
 
@@ -902,6 +921,13 @@ class LLMRun:
         avg_batch_size: Average concurrent sequences during steady state (from Prometheus).
         is_stable: Whether this run passed stability checks.
         unstable_reason: Reason for instability (empty if stable).
+        prompt_tokens: Prompt tokens processed by the server over the whole run, from the
+            last Prometheus snapshot (`vllm:prompt_tokens_total`). `None` if not recorded.
+        prefix_cache_queries: Tokens looked up in the prefix cache over the whole run
+            (`vllm:prefix_cache_queries_total`). `None` if not recorded, which also
+            happens when prefix caching is disabled.
+        prefix_cache_hits: Tokens found in the prefix cache over the whole run
+            (`vllm:prefix_cache_hits_total`). `None` if not recorded.
     """
 
     domain: str
@@ -941,6 +967,31 @@ class LLMRun:
     unstable_reason: str
     _results_path: str
     _prometheus_path: str
+    prompt_tokens: float | None = None
+    prefix_cache_queries: float | None = None
+    prefix_cache_hits: float | None = None
+
+    @property
+    def prefix_cache_hit_share(self) -> float | None:
+        """Prefix cache hits divided by prefix cache queries, or `None` if unavailable."""
+        if self.prefix_cache_queries is None or self.prefix_cache_hits is None:
+            return None
+        if self.prefix_cache_queries <= 0:
+            return None
+        return self.prefix_cache_hits / self.prefix_cache_queries
+
+    @property
+    def prefix_cache_query_ratio(self) -> float | None:
+        """Prefix cache queries divided by prompt tokens, or `None` if unavailable.
+
+        Values clearly above 1 mean the server looked up more tokens than the
+        prompts contain, e.g. because preempted requests were recomputed.
+        """
+        if self.prefix_cache_queries is None or self.prompt_tokens is None:
+            return None
+        if self.prompt_tokens <= 0:
+            return None
+        return self.prefix_cache_queries / self.prompt_tokens
 
     def _ensure_downloaded(self, path_field: str) -> None:
         """If this record was loaded from HF, download the file at path_field."""
@@ -1472,6 +1523,34 @@ class LLMRuns:
     def precision(self, *prec: str) -> LLMRuns:
         """Filter to runs matching any of the given weight precisions."""
         return self._filter("weight_precision", prec)
+
+    def prefix_cache_query_ratio(
+        self, *, min: float | None = None, max: float | None = None
+    ) -> LLMRuns:
+        """Filter to runs whose prefix cache queries per prompt token fall in a range.
+
+        With no bounds, all runs are returned unchanged. With a bound, runs without
+        prefix cache data are excluded. For example, `max=1.01` drops runs where
+        the server queried the cache for far more tokens than the prompts contain.
+
+        Args:
+            min: Minimum ratio (inclusive).
+            max: Maximum ratio (inclusive).
+        """
+        if min is None and max is None:
+            return self
+        key = f"_prefix_cache_query_ratio_{min}_{max}"
+        if key not in self._cache:
+            kept = []
+            for r in self._runs:
+                ratio = r.prefix_cache_query_ratio
+                if ratio is None or (min is not None and ratio < min):
+                    continue
+                if max is not None and ratio > max:
+                    continue
+                kept.append(r)
+            self._cache[key] = self._derive(kept)
+        return self._cache[key]
 
     def architecture(self, *arch: str) -> LLMRuns:
         """Filter to runs matching any of the given architectures."""
