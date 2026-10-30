@@ -23,6 +23,7 @@ def _make_benchmark_fixture(
     max_num_seqs: int = 16,
     seed: int = 1,
     avg_batch: float = 16.0,
+    cache_counters: tuple[float, float, float] | None = None,
 ) -> None:
     """Create a minimal benchmark directory with one run."""
     run_dir = (
@@ -57,10 +58,25 @@ def _make_benchmark_fixture(
             ],
         },
     )
-    _write_json(
-        run_dir / "prometheus.json",
-        {"steady_state_stats": {"vllm:num_requests_running": avg_batch}},
-    )
+    prometheus: dict[str, object] = {
+        "steady_state_stats": {"vllm:num_requests_running": avg_batch}
+    }
+    if cache_counters is not None:
+        prompt, queries, hits = cache_counters
+        prometheus["timeline"] = [
+            {"metrics": 'vllm:prompt_tokens_total{engine="0"} 1.0\n'},
+            {
+                "metrics": (
+                    "# TYPE vllm:prompt_tokens_total counter\n"
+                    f'vllm:prompt_tokens_total{{engine="0"}} {prompt / 2}\n'
+                    f'vllm:prompt_tokens_total{{engine="1"}} {prompt / 2}\n'
+                    f'vllm:prefix_cache_queries_total{{engine="0"}} {queries}\n'
+                    f'vllm:prefix_cache_queries_created{{engine="0"}} 1.7e9\n'
+                    f'vllm:prefix_cache_hits_total{{engine="0"}} {hits}\n'
+                )
+            },
+        ]
+    _write_json(run_dir / "prometheus.json", prometheus)
 
     org, model = model_id.split("/", 1)
     model_info_dir = cfg_root / task / org / model
@@ -683,3 +699,57 @@ def test_diffusion_runs_precision_filter(tmp_path: Path) -> None:
 
     fp8 = runs.precision("fp8")
     assert len(fp8) == 0
+
+
+def test_llm_runs_prefix_cache_counters(tmp_path: Path) -> None:
+    root = tmp_path / "bench"
+    cfg_root = tmp_path / "cfg"
+    _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+    _make_benchmark_fixture(
+        root, cfg_root, max_num_seqs=32, seed=2, cache_counters=(1000.0, 1000.0, 600.0)
+    )
+    _make_benchmark_fixture(
+        root, cfg_root, max_num_seqs=64, seed=3, cache_counters=(1000.0, 5000.0, 2000.0)
+    )
+
+    runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+    none, clean, recomputed = (runs.max_num_seqs(b)[0] for b in (16, 32, 64))
+
+    assert none.prompt_tokens is None
+    assert none.prefix_cache_queries is None
+    assert none.prefix_cache_hit_share is None
+    assert none.prefix_cache_query_ratio is None
+
+    assert clean.prompt_tokens == 1000.0
+    assert clean.prefix_cache_queries == 1000.0
+    assert clean.prefix_cache_hits == 600.0
+    assert clean.prefix_cache_hit_share == 0.6
+    assert clean.prefix_cache_query_ratio == 1.0
+
+    assert recomputed.prefix_cache_hit_share == 0.4
+    assert recomputed.prefix_cache_query_ratio == 5.0
+
+    df = runs.to_dataframe()
+    assert {"prompt_tokens", "prefix_cache_queries", "prefix_cache_hits"} <= set(df.columns)
+
+
+def test_llm_runs_prefix_cache_query_ratio_filter(tmp_path: Path) -> None:
+    root = tmp_path / "bench"
+    cfg_root = tmp_path / "cfg"
+    _make_benchmark_fixture(root, cfg_root, max_num_seqs=16, seed=1)
+    _make_benchmark_fixture(
+        root, cfg_root, max_num_seqs=32, seed=2, cache_counters=(1000.0, 1000.0, 600.0)
+    )
+    _make_benchmark_fixture(
+        root, cfg_root, max_num_seqs=64, seed=3, cache_counters=(1000.0, 5000.0, 2000.0)
+    )
+
+    runs = LLMRuns.from_raw_results(root, config_dir=cfg_root, stable_only=False)
+
+    assert len(runs.prefix_cache_query_ratio()) == 3
+
+    clean = runs.prefix_cache_query_ratio(max=1.01)
+    assert [r.max_num_seqs for r in clean] == [32]
+
+    flagged = runs.prefix_cache_query_ratio(min=1.01)
+    assert [r.max_num_seqs for r in flagged] == [64]
