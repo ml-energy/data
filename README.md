@@ -61,6 +61,7 @@ for arch, group in runs.task("gpqa").gpu_model("B200").group_by("architecture").
 - [**The ML.ENERGY Leaderboard v3.0**](https://ml.energy/leaderboard): Benchmark results are loaded and compiled into the leaderboard web app data format.
 - [**OpenG2G**](https://gpu2grid.io/openg2g/): Datacenter-grid coordination simulation framework; loads benchmark data and fits models.
 - [**The ML.ENERGY blog**](https://ml.energy/blog): Analysis scripts for blog posts.
+- [**SOMA AI Emission Factors (SAEF)**](https://github.com/guillermollopis/soma-ai-emission-factors): Open CC BY 4.0 dataset of carbon and water factors for AI inference; builds per-model energy factors from Leaderboard v3 benchmark results.
 
 ## Agent skill
 
